@@ -273,7 +273,7 @@ _INDEX_HTML = r"""<!DOCTYPE html>
   </section>
 
   <!-- ABA 2F: ANÁLISE DE CONTRATOS (FILTROS EM LISTAS + DESCRITIVO + EXTRATO) -->
-  <section id="tab-analise-contrato" class="tab">
+  <section id="tab-analise_contrato" class="tab">
     <div class="toolbar">
       <select id="flt-ac-num" style="min-width:210px;"><option value="">Filtrar por Nº do Contrato (Todos)</option></select>
       <select id="flt-ac-obj" style="max-width:360px;"><option value="">Filtrar por Objeto (Todos)</option></select>
