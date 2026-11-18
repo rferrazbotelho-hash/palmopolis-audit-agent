@@ -1,5 +1,5 @@
 # PARECER JURÍDICO COMPLETO E VALIDAÇÃO TCU
-**Entidade:** Prefeitura Municipal de Palmópolis/MG | **CNPJ:** `66234345000118` | **Emissão:** 17/11/2026 23:24
+**Entidade:** Prefeitura Municipal de Palmópolis/MG | **CNPJ:** `66234345000118` | **Emissão:** 17/11/2026 23:31
 
 > ESCLARECIMENTO INSTITUCIONAL (TCE-MG × TCM-MG): No Estado de Minas Gerais, não existe Tribunal de Contas dos Municípios (TCM-MG) separado; toda a jurisdição de controle externo municipal pertence constitucionalmente ao Tribunal de Contas do Estado de Minas Gerais (TCE-MG). Assim, a peça de controle de contas deve ser protocolada diretamente no e-TCE-MG / Ouvidoria do TCE-MG.
 

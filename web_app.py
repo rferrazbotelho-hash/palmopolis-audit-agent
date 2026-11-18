@@ -155,6 +155,7 @@ _INDEX_HTML = r"""<!DOCTYPE html>
   <button data-tab="fiscal">Fiscal de Contas Públicas</button>
   <button data-tab="corretor">Fiscal Corretor (Passo a Passo)</button>
   <button data-tab="juridico">Agente Jurídico (TCE-MG / MPMG / TCU)</button>
+  <button data-tab="pesquisador">Contratos &amp; Recebimentos</button>
   <button data-tab="critica">Análise Crítica (Variações)</button>
   <button data-tab="tabelas">Explorador de Bases</button>
   <button data-tab="cobertura">Cobertura &amp; Endpoints</button>
@@ -224,6 +225,48 @@ _INDEX_HTML = r"""<!DOCTYPE html>
     <div class="card">
       <h2>Minuta 2 — Notícia de Fato ao MPMG</h2>
       <pre id="min-mp" style="white-space:pre-wrap;font-size:12.5px;background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;max-height:420px;overflow:auto;"></pre>
+    </div>
+  </section>
+
+  <!-- ABA 2D: PESQUISADOR DE CONTRATOS POR FORNECEDOR E RECEBIMENTOS CRONOLÓGICOS -->
+  <section id="tab-pesquisador" class="tab">
+    <div class="toolbar">
+      <input type="search" id="flt-forn-list" placeholder="Pesquisar fornecedor por nome ou CPF/CNPJ..." />
+      <button id="btn-limpar-forn" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;">Mostrar Todos</button>
+      <a href="/files/contratos_fornecedor_e_recebimentos.xlsx" target="_blank" style="padding:8px 12px;background:#0f294a;color:#fff;text-decoration:none;border-radius:6px;font-size:12.5px;">Baixar Excel (.xlsx)</a>
+      <span id="forn-sel-badge" style="font-size:12.5px;font-weight:600;color:#1d4ed8;"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start;">
+      <div class="card" style="padding:12px;">
+        <h2 style="font-size:14px;">Fornecedores (<span id="cnt-forn-list">0</span>)</h2>
+        <div id="forn-lista-lateral" style="max-height:660px;overflow:auto;font-size:12.5px;"></div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Contratos do Fornecedor (<span id="cnt-ctr-forn">0</span>)</h2>
+          <div class="tbl-wrap" style="max-height:280px;">
+            <table>
+              <thead><tr><th>Contrato</th><th>Exerc.</th><th>Fornecedor</th><th>Modalidade</th><th class="num">Valor Contrato</th><th class="num">Pago Vinc.</th><th>Objeto</th></tr></thead>
+              <tbody id="tb-ctr-forn"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+            <h2 style="margin:0;border:none;padding:0;">Recebimentos por Ordem Cronológica (<span id="cnt-rec-cron">0</span>)</h2>
+            <div style="display:flex;gap:8px;">
+              <input type="search" id="flt-rec-txt" placeholder="Filtrar data, empenho, contrato ou objeto..." style="min-width:220px;" />
+              <button id="btn-ordem-cron" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;cursor:pointer;font-size:12px;">Ordem: Mais Antiga → Recente</button>
+            </div>
+          </div>
+          <div class="tbl-wrap" style="max-height:380px;">
+            <table>
+              <thead><tr><th>Data</th><th>Fornecedor</th><th>Empenho</th><th>Contrato</th><th>Objeto</th><th class="num">Valor Recebido</th><th>NF</th></tr></thead>
+              <tbody id="tb-rec-cron"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -379,6 +422,85 @@ async function init() {
   // Cobertura
   document.getElementById('tb-status').innerHTML = (DATA.statuses || []).map(s =>
     `<tr><td>${s.fonte}</td><td>${s.dataset}</td><td>${s.exercicio || '-'}</td><td class="num">${s.registros}</td><td><span class="badge ${s.status}">${s.status}</span></td><td><small>${s.detalhe||''}</small></td></tr>`
+  ).join('');
+
+  // Pesquisador de Contratos por Fornecedor e Recebimentos Cronológicos
+  initPesquisador();
+}
+
+let PESQ = null;
+let FORN_SEL = '';
+let ORDEM_ASC = true;
+
+async function initPesquisador() {
+  let r = await fetch('/files/fornecedor_contratos_recebimentos.json').catch(() => null);
+  if (!r || !r.ok) r = await fetch('./files/fornecedor_contratos_recebimentos.json').catch(() => null);
+  if (!r || !r.ok) return;
+  PESQ = await r.json();
+  document.getElementById('flt-forn-list').oninput = renderFornecedoresLista;
+  document.getElementById('flt-rec-txt').oninput = renderRecebimentosCron;
+  document.getElementById('btn-limpar-forn').onclick = () => { FORN_SEL = ''; renderFornecedoresLista(); renderContratosFornecedor(); renderRecebimentosCron(); };
+  document.getElementById('btn-ordem-cron').onclick = () => {
+    ORDEM_ASC = !ORDEM_ASC;
+    document.getElementById('btn-ordem-cron').textContent = ORDEM_ASC ? 'Ordem: Mais Antiga → Recente' : 'Ordem: Mais Recente → Antiga';
+    renderRecebimentosCron();
+  };
+  renderFornecedoresLista();
+  renderContratosFornecedor();
+  renderRecebimentosCron();
+}
+
+function renderFornecedoresLista() {
+  if (!PESQ) return;
+  const q = document.getElementById('flt-forn-list').value.toLowerCase();
+  const list = (PESQ.fornecedores_lista || []).filter(f =>
+    !q || (f.fornecedor_nome + ' ' + (f.cpf_cnpj||'')).toLowerCase().includes(q)
+  );
+  document.getElementById('cnt-forn-list').textContent = list.length;
+  document.getElementById('forn-sel-badge').textContent = FORN_SEL ? `Selecionado: ${FORN_SEL}` : 'Exibindo todos os fornecedores';
+  document.getElementById('forn-lista-lateral').innerHTML = list.slice(0, 300).map(f => {
+    const active = FORN_SEL && FORN_SEL === f.fornecedor_nome;
+    return `<div onclick="selecionarFornecedor('${String(f.fornecedor_nome).replace(/'/g, "\\'")}')" style="padding:8px;border-bottom:1px solid #e2e8f0;cursor:pointer;border-radius:6px;background:${active?'#eff6ff':'transparent'}">
+      <strong style="color:#0f294a">${f.fornecedor_nome}</strong><br>
+      <span style="color:#64748b">${f.cpf_cnpj || '-'} • ${f.qtd_contratos} contrato(s) • ${brl(f.valor_contratado)}</span>
+    </div>`;
+  }).join('');
+}
+
+window.selecionarFornecedor = function(nome) {
+  FORN_SEL = (FORN_SEL === nome) ? '' : nome;
+  renderFornecedoresLista();
+  renderContratosFornecedor();
+  renderRecebimentosCron();
+};
+
+function renderContratosFornecedor() {
+  if (!PESQ) return;
+  const q = document.getElementById('flt-forn-list').value.toLowerCase();
+  const rows = (PESQ.contratos || []).filter(c => {
+    if (FORN_SEL) return c.fornecedor_nome.toLowerCase().includes(FORN_SEL.toLowerCase());
+    return !q || (c.fornecedor_nome + ' ' + c.cpf_cnpj + ' ' + c.numero_contrato + ' ' + c.objeto).toLowerCase().includes(q);
+  });
+  document.getElementById('cnt-ctr-forn').textContent = rows.length;
+  document.getElementById('tb-ctr-forn').innerHTML = rows.slice(0, 300).map(c =>
+    `<tr><td><strong>${c.numero_contrato}</strong></td><td>${c.exercicio||''}</td><td>${c.fornecedor_nome}<br><small style="color:#64748b">${c.cpf_cnpj||''}</small></td><td>${c.modalidade}</td><td class="num">${brl(c.valor_contrato)}</td><td class="num">${brl(c.valor_pago_vinculado)}</td><td><small>${String(c.objeto||'').slice(0,180)}</small></td></tr>`
+  ).join('');
+}
+
+function renderRecebimentosCron() {
+  if (!PESQ) return;
+  const qForn = document.getElementById('flt-forn-list').value.toLowerCase();
+  const qRec = document.getElementById('flt-rec-txt').value.toLowerCase();
+  let rows = (PESQ.recebimentos_cronologicos || []).filter(r => {
+    if (FORN_SEL && !r.fornecedor_nome.toLowerCase().includes(FORN_SEL.toLowerCase())) return false;
+    if (!FORN_SEL && qForn && !(r.fornecedor_nome + ' ' + r.cpf_cnpj).toLowerCase().includes(qForn)) return false;
+    if (qRec && !(r.data + ' ' + r.empenho + ' ' + r.contrato + ' ' + r.objeto + ' ' + r.fornecedor_nome).toLowerCase().includes(qRec)) return false;
+    return true;
+  });
+  if (!ORDEM_ASC) rows = rows.slice().reverse();
+  document.getElementById('cnt-rec-cron').textContent = rows.length;
+  document.getElementById('tb-rec-cron').innerHTML = rows.slice(0, 500).map(r =>
+    `<tr><td style="white-space:nowrap">${r.data}</td><td>${r.fornecedor_nome}<br><small style="color:#64748b">${r.cpf_cnpj||''}</small></td><td style="white-space:nowrap">${r.empenho}</td><td style="white-space:nowrap">${r.contrato}</td><td><small>${String(r.objeto||'').slice(0,180)}</small></td><td class="num"><strong>${brl(r.valor_recebido)}</strong></td><td>${r.nota_fiscal||''}</td></tr>`
   ).join('');
 }
 
