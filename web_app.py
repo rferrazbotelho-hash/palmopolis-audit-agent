@@ -35,11 +35,13 @@ def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
     critica_p = OUTPUT_DIR / "analise_critica.json"
     fiscal_p = OUTPUT_DIR / "apontamentos_fiscal_contas.json"
     corretor_p = OUTPUT_DIR / "plano_correcao_fiscal_corretor.json"
+    jur_p = OUTPUT_DIR / "dossie_juridico_tcu.json"
 
     resumo = json.loads(resumo_p.read_text(encoding="utf-8")) if resumo_p.exists() else {"kpis": {}, "achados": []}
     critica = json.loads(critica_p.read_text(encoding="utf-8")) if critica_p.exists() else {"resumo_eixos": {}, "anomalias": []}
     fiscal = json.loads(fiscal_p.read_text(encoding="utf-8")) if fiscal_p.exists() else {"apontamentos": []}
     corretor = json.loads(corretor_p.read_text(encoding="utf-8")) if corretor_p.exists() else {"roteiros": []}
+    juridico = json.loads(jur_p.read_text(encoding="utf-8")) if jur_p.exists() else {"validacoes_tcu": []}
 
     mem, pncp, portal, statuses = _load_from_raw(settings.audit_exercicios)
     audit = Reconciliador(mem, pncp, portal, statuses, settings.audit_exercicios).run()
@@ -70,6 +72,7 @@ def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
         "critica": critica,
         "fiscal": fiscal,
         "corretor": corretor,
+        "juridico": juridico,
         "statuses": statuses,
         "tables": tables,
     })
@@ -142,6 +145,7 @@ _INDEX_HTML = r"""<!DOCTYPE html>
     <a href="/files/painel_analise_critica.html" target="_blank">Painel Análise Crítica</a>
     <a href="/files/relatorio_fiscal_contas_palmopolis.html" target="_blank">Relatório Fiscal (Impressão)</a>
     <a href="/files/plano_correcao_fiscal_corretor.html" target="_blank">Plano Corretor (Impressão)</a>
+    <a href="/files/dossie_juridico_completo.html" target="_blank">Dossiê Jurídico (TCU/TCE/MP)</a>
     <a href="/files/auditoria_palmopolis_master.xlsx" target="_blank">Baixar Excel (.xlsx)</a>
   </div>
 </header>
@@ -150,6 +154,7 @@ _INDEX_HTML = r"""<!DOCTYPE html>
   <button class="active" data-tab="visao">Visão Executiva</button>
   <button data-tab="fiscal">Fiscal de Contas Públicas</button>
   <button data-tab="corretor">Fiscal Corretor (Passo a Passo)</button>
+  <button data-tab="juridico">Agente Jurídico (TCE-MG / MPMG / TCU)</button>
   <button data-tab="critica">Análise Crítica (Variações)</button>
   <button data-tab="tabelas">Explorador de Bases</button>
   <button data-tab="cobertura">Cobertura &amp; Endpoints</button>
@@ -197,6 +202,29 @@ _INDEX_HTML = r"""<!DOCTYPE html>
       <input type="search" id="flt-corretor-txt" placeholder="Filtrar roteiro por setor, sistema, ação ou apontamento..." />
     </div>
     <div id="corretor-list"></div>
+  </section>
+
+  <!-- ABA 2C: AGENTE JURÍDICO -->
+  <section id="tab-juridico" class="tab">
+    <div id="jur-comp" class="parecer" style="background:#eff6ff;border-color:#bfdbfe;border-left-color:#2563eb;"></div>
+    <div id="jur-conc" class="parecer"></div>
+    <div class="card">
+      <h2>Matriz de Validação Jurídica (Referencial TCU × Apontamentos)</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Apont.</th><th>Status TCU</th><th>Entendimento TCU</th><th>Tipificação</th><th>Repercussão</th></tr></thead>
+          <tbody id="tb-tcu"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Minuta 1 — Representação ao TCE-MG</h2>
+      <pre id="min-tce" style="white-space:pre-wrap;font-size:12.5px;background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;max-height:420px;overflow:auto;"></pre>
+    </div>
+    <div class="card">
+      <h2>Minuta 2 — Notícia de Fato ao MPMG</h2>
+      <pre id="min-mp" style="white-space:pre-wrap;font-size:12.5px;background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;max-height:420px;overflow:auto;"></pre>
+    </div>
   </section>
 
   <!-- ABA 3: ANÁLISE CRÍTICA -->
@@ -325,6 +353,16 @@ async function init() {
   renderCorretor();
   document.getElementById('flt-prio').onchange = renderCorretor;
   document.getElementById('flt-corretor-txt').oninput = renderCorretor;
+
+  // Jurídico
+  const j = DATA.juridico || {};
+  document.getElementById('jur-comp').textContent = j.nota_competencia_tce_tcm_mg || '';
+  document.getElementById('jur-conc').textContent = j.parecer_juridico_conclusivo || '';
+  document.getElementById('tb-tcu').innerHTML = (j.validacoes_tcu || []).map(v =>
+    `<tr><td><strong>${v.codigo_apontamento}</strong></td><td><span class="badge ${v.status_validacao_tcu==='VALIDADO_RISCO_DEBITO_MULTA'?'CRITICO':v.status_validacao_tcu==='VALIDADO_RISCO_GLOSA'?'ALTO':'MEDIO'}">${v.status_validacao_tcu}</span></td><td>${v.entendimento_tcu_aplicavel}</td><td>${v.tipificacao_controle_externo}</td><td>${v.repercussao_juridica}</td></tr>`
+  ).join('');
+  document.getElementById('min-tce').textContent = j.minuta_tce_mg || '';
+  document.getElementById('min-mp').textContent = j.minuta_mpmg || '';
 
   // Crítica
   const eixos = Object.keys(DATA.critica.resumo_eixos || {});
