@@ -15,6 +15,7 @@ from connectors.pncp_client import PNCPClient
 from connectors.portal_scraper import PortalScraper
 from engine.agente_juridico import AgenteJuridico, export_dossie_juridico
 from engine.analise_critica import AnalisadorCritico
+from engine.diarias_pagamento import AnalisadorDiarias, export_diarias_pagamento
 from engine.fiscal_contas import FiscalContasPublicas, export_relatorio_fiscal
 from engine.fiscal_corretor import FiscalCorretor, export_plano_corretor
 from engine.fornecedor_contratos import PesquisadorContratosRecebimentos, export_contratos_recebimentos
@@ -141,6 +142,10 @@ def main() -> int:
     pesq_bundle = PesquisadorContratosRecebimentos(mem_data).build()
     pesq_paths = export_contratos_recebimentos(pesq_bundle)
 
+    # 5g. Pagamento de Diárias (pesquisa por Nome ou CPF)
+    diarias_bundle = AnalisadorDiarias(mem_data).build()
+    diarias_paths = export_diarias_pagamento(diarias_bundle)
+
     # 6. Geração de Relatórios
     xlsx_path: Path = build_excel_master(audit_result)
     html_path: Path = build_dashboard_html(audit_result, statuses_dicts)
@@ -183,6 +188,8 @@ def main() -> int:
     log.info("Agente Jurídico  : %s (%d validações TCU)", jur_paths["html"], len(dossie_jur.validacoes_tcu))
     log.info("Contratos/Receb. : %s (%d contratos, %d recebimentos)",
              pesq_paths["xlsx"], len(pesq_bundle["contratos"]), len(pesq_bundle["recebimentos_cronologicos"]))
+    log.info("Pagam. Diárias   : %s (%d servidores, %d pagamentos)",
+             diarias_paths["xlsx"], len(diarias_bundle["servidores_resumo"]), len(diarias_bundle["pagamentos_diarias"]))
     log.info("Resumo JSON      : %s", resumo_json)
     log.info("Achados gerados  : %d (Críticos=%d, Altos=%d, Médios=%d)",
              audit_result.kpis.get("achados_total", 0),

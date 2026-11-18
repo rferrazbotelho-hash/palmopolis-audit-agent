@@ -1,6 +1,6 @@
 # PLANO DE CORREÇÃO PASSO A PASSO — FISCAL CORRETOR
 **Entidade:** Prefeitura Municipal de Palmópolis/MG | **CNPJ:** `66234345000118`  
-**Exercícios:** 2025, 2026 | **Gerado em:** 17/11/2026 23:31
+**Exercícios:** 2025, 2026 | **Gerado em:** 17/11/2026 23:38
 
 > **Estratégia Geral:** Plano estruturado em 10 roteiros corretivos (20 passos acionáveis), com 4 frentes de ação IMEDIATA (0 a 5 dias) focadas em estancar riscos de glosa no PNCP, estouro de dotação orçamentária e extrapolação de NAFs.
 

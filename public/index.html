@@ -75,6 +75,7 @@
   <button data-tab="corretor">Fiscal Corretor (Passo a Passo)</button>
   <button data-tab="juridico">Agente Jurídico (TCE-MG / MPMG / TCU)</button>
   <button data-tab="pesquisador">Contratos &amp; Recebimentos</button>
+  <button data-tab="diarias">Pagamento de Diárias</button>
   <button data-tab="critica">Análise Crítica (Variações)</button>
   <button data-tab="tabelas">Explorador de Bases</button>
   <button data-tab="cobertura">Cobertura &amp; Endpoints</button>
@@ -184,6 +185,33 @@
               <tbody id="tb-rec-cron"></tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 2E: PAGAMENTO DE DIÁRIAS -->
+  <section id="tab-diarias" class="tab">
+    <div class="toolbar">
+      <input type="search" id="flt-dia-nome-cpf" placeholder="Pesquisar servidor por Nome ou CPF (ex: 639 ou LAERCIO)..." />
+      <select id="flt-dia-unid"><option value="">Todas as unidades</option></select>
+      <button id="btn-limpar-dia" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;">Mostrar Todos</button>
+      <button id="btn-dia-ordem" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;cursor:pointer;font-size:12.5px;">Ordem: Mais Antiga → Recente</button>
+      <a href="/files/pagamento_diarias_completo.xlsx" target="_blank" style="padding:8px 12px;background:#0f294a;color:#fff;text-decoration:none;border-radius:6px;font-size:12.5px;">Baixar Excel (.xlsx)</a>
+    </div>
+    <div id="dia-kpis" class="kpi-grid"></div>
+    <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start;">
+      <div class="card" style="padding:12px;">
+        <h2 style="font-size:14px;">Servidores Beneficiários (<span id="cnt-dia-srv">0</span>)</h2>
+        <div id="dia-srv-lista" style="max-height:620px;overflow:auto;font-size:12.5px;"></div>
+      </div>
+      <div class="card">
+        <h2>Pagamentos de Diárias (<span id="cnt-dia-pags">0</span>) <span id="dia-sel-badge" style="font-size:12px;color:#1d4ed8;font-weight:500;"></span></h2>
+        <div class="tbl-wrap" style="max-height:620px;">
+          <table>
+            <thead><tr><th>Data Pgto</th><th>Servidor</th><th>CPF</th><th>Função</th><th>Unidade</th><th>Emp.</th><th>Pgto</th><th class="num">Valor Pago</th><th>Descrição</th></tr></thead>
+            <tbody id="tb-dia-pags"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -345,6 +373,7 @@ async function init() {
 
   // Pesquisador de Contratos por Fornecedor e Recebimentos Cronológicos
   initPesquisador();
+  initDiarias();
 }
 
 let PESQ = null;
@@ -420,6 +449,96 @@ function renderRecebimentosCron() {
   document.getElementById('cnt-rec-cron').textContent = rows.length;
   document.getElementById('tb-rec-cron').innerHTML = rows.slice(0, 500).map(r =>
     `<tr><td style="white-space:nowrap">${r.data}</td><td>${r.fornecedor_nome}<br><small style="color:#64748b">${r.cpf_cnpj||''}</small></td><td style="white-space:nowrap">${r.empenho}</td><td style="white-space:nowrap">${r.contrato}</td><td><small>${String(r.objeto||'').slice(0,180)}</small></td><td class="num"><strong>${brl(r.valor_recebido)}</strong></td><td>${r.nota_fiscal||''}</td></tr>`
+  ).join('');
+}
+
+let DIA = null;
+let DIA_SRV_SEL = '';
+let DIA_ASC = true;
+
+async function initDiarias() {
+  let r = await fetch('/files/pagamento_diarias.json').catch(() => null);
+  if (!r || !r.ok) r = await fetch('./files/pagamento_diarias.json').catch(() => null);
+  if (!r || !r.ok) return;
+  DIA = await r.json();
+  const unids = [...new Set((DIA.pagamentos_diarias || []).map(x => x.unidade_orcamentaria).filter(Boolean))].sort();
+  document.getElementById('flt-dia-unid').innerHTML += unids.map(u => `<option value="${u}">${u}</option>`).join('');
+  document.getElementById('flt-dia-nome-cpf').oninput = () => { renderDiaServidores(); renderDiaPagamentos(); };
+  document.getElementById('flt-dia-unid').onchange = () => { renderDiaServidores(); renderDiaPagamentos(); };
+  document.getElementById('btn-limpar-dia').onclick = () => {
+    DIA_SRV_SEL = '';
+    document.getElementById('flt-dia-nome-cpf').value = '';
+    document.getElementById('flt-dia-unid').value = '';
+    renderDiaServidores();
+    renderDiaPagamentos();
+  };
+  document.getElementById('btn-dia-ordem').onclick = () => {
+    DIA_ASC = !DIA_ASC;
+    document.getElementById('btn-dia-ordem').textContent = DIA_ASC ? 'Ordem: Mais Antiga → Recente' : 'Ordem: Mais Recente → Antiga';
+    renderDiaPagamentos();
+  };
+  renderDiaServidores();
+  renderDiaPagamentos();
+}
+
+window.selecionarServidorDiaria = function(nome) {
+  DIA_SRV_SEL = (DIA_SRV_SEL === nome) ? '' : nome;
+  renderDiaServidores();
+  renderDiaPagamentos();
+};
+
+function renderDiaServidores() {
+  if (!DIA) return;
+  const q = document.getElementById('flt-dia-nome-cpf').value.toLowerCase().trim();
+  const unid = document.getElementById('flt-dia-unid').value;
+  const qDigits = q.replace(/\D/g, '');
+  const list = (DIA.servidores_resumo || []).filter(s => {
+    if (unid && s.unidade_orcamentaria !== unid) return false;
+    if (!q) return true;
+    const hay = (s.nome_servidor + ' ' + (s.cpf || '') + ' ' + (s.funcao || '')).toLowerCase();
+    const cpfDigits = String(s.cpf || '').replace(/\D/g, '');
+    return hay.includes(q) || (qDigits && cpfDigits.includes(qDigits));
+  });
+  document.getElementById('cnt-dia-srv').textContent = list.length;
+  document.getElementById('dia-srv-lista').innerHTML = list.map(s => {
+    const active = DIA_SRV_SEL && DIA_SRV_SEL === s.nome_servidor;
+    return `<div onclick="selecionarServidorDiaria('${String(s.nome_servidor).replace(/'/g, "\\'")}')" style="padding:8px;border-bottom:1px solid #e2e8f0;cursor:pointer;border-radius:6px;background:${active?'#eff6ff':'transparent'}">
+      <strong style="color:#0f294a">${s.nome_servidor}</strong><br>
+      <span style="color:#64748b">CPF: ${s.cpf || 'N/D'} • ${s.qtd_diarias} diária(s) • <strong>${brl(s.total_pago)}</strong></span>
+    </div>`;
+  }).join('');
+}
+
+function renderDiaPagamentos() {
+  if (!DIA) return;
+  const q = document.getElementById('flt-dia-nome-cpf').value.toLowerCase().trim();
+  const unid = document.getElementById('flt-dia-unid').value;
+  const qDigits = q.replace(/\D/g, '');
+  let rows = (DIA.pagamentos_diarias || []).filter(r => {
+    if (DIA_SRV_SEL && r.nome_servidor !== DIA_SRV_SEL) return false;
+    if (unid && r.unidade_orcamentaria !== unid) return false;
+    if (!q) return true;
+    const hay = (r.nome_servidor + ' ' + (r.cpf || '') + ' ' + (r.funcao || '') + ' ' + (r.descricao || '')).toLowerCase();
+    const cpfDigits = String(r.cpf || '').replace(/\D/g, '');
+    return hay.includes(q) || (qDigits && cpfDigits.includes(qDigits));
+  });
+  if (!DIA_ASC) rows = rows.slice().reverse();
+
+  const totalPago = rows.reduce((acc, x) => acc + Number(x.valor_pago || 0), 0);
+  const totalEmp = rows.reduce((acc, x) => acc + Number(x.valor_empenho || 0), 0);
+  const srvsUnicos = new Set(rows.map(x => x.nome_servidor)).size;
+
+  document.getElementById('dia-kpis').innerHTML = [
+    ['Servidores no Filtro', srvsUnicos, 'Com recebimento de diárias'],
+    ['Pagamentos de Diárias', rows.length, 'Registros encontrados'],
+    ['Total Empenhado', brl(totalEmp), 'No recorte selecionado'],
+    ['Total Pago em Diárias', brl(totalPago), 'No recorte selecionado'],
+  ].map(([l, v, s]) => `<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join('');
+
+  document.getElementById('cnt-dia-pags').textContent = rows.length;
+  document.getElementById('dia-sel-badge').textContent = DIA_SRV_SEL ? `• Selecionado: ${DIA_SRV_SEL}` : '';
+  document.getElementById('tb-dia-pags').innerHTML = rows.slice(0, 600).map(r =>
+    `<tr><td style="white-space:nowrap">${r.data_pagamento}</td><td><strong>${r.nome_servidor}</strong></td><td style="white-space:nowrap">${r.cpf || '-'}</td><td><small>${r.funcao || '-'}</small></td><td><small>${r.unidade_orcamentaria}</small></td><td>${r.numero_empenho || ''}</td><td>${r.numero_pagamento || ''}</td><td class="num"><strong>${brl(r.valor_pago)}</strong></td><td><small>${String(r.descricao || '').slice(0, 140)}</small></td></tr>`
   ).join('');
 }
 
