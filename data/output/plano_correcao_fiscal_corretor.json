@@ -1,0 +1,341 @@
+{
+  "entidade": "Prefeitura Municipal de Palmópolis/MG",
+  "cnpj": "66234345000118",
+  "exercicios": [
+    2025,
+    2026
+  ],
+  "gerado_em": "17/11/2026 23:11",
+  "resumo_executivo": "Plano estruturado em 10 roteiros corretivos (20 passos acionáveis), com 4 frentes de ação IMEDIATA (0 a 5 dias) focadas em estancar riscos de glosa no PNCP, estouro de dotação orçamentária e extrapolação de NAFs.",
+  "total_roteiros": 10,
+  "total_passos": 20,
+  "roteiros": [
+    {
+      "codigo_apontamento": "AP-001",
+      "titulo_apontamento": "Ausência de divulgação de contratos no PNCP (condição legal de eficácia)",
+      "gravidade": "IRREGULARIDADE_GRAVE",
+      "prioridade_execucao": "IMEDIATA_0_5D",
+      "diagnostico_causa_raiz": "Os 368 contratos constam no ERP/iLAI Memory, mas não foram transmitidos ao módulo de Contratos do PNCP (API de consulta retornou 0 contratos para 2025 e 2026).",
+      "melhor_conducao": "Segregar imediatamente contratos regidos pela Lei 14.133/2021 dos contratos remanescentes da Lei 8.666/93 e promover o envio em lote via integração do ERP ao PNCP, suspendendo novos pagamentos de contratos da Lei 14.133/2021 até a geração do numeroControlePNCP (condição de eficácia do Art. 94).",
+      "fundamento_saneamento": "Lei 14.133/2021, Art. 94 e Art. 191; LINDB (DL 4.657/42), Art. 20 e Art. 21.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Departamento de Licitações e Contratos",
+          "sistema_alvo": "ERP Municipal / Planilha de Controle",
+          "acao": "Listar os 368 contratos e classificar cada instrumento por regime legal (Lei 14.133/21 vs Lei 8.666/93) e situação (vigente/encerrado).",
+          "documentos_comprobatorios": [
+            "Planilha de inventário contratual assinada",
+            "Cópia dos instrumentos contratuais"
+          ],
+          "criterio_validacao": "100% dos contratos vigentes da Lei 14.133/21 identificados."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "TI / Fornecedor do ERP + Compras",
+          "sistema_alvo": "ERP -> API PNCP",
+          "acao": "Configurar/reprocessar a rotina de integração de contratos no PNCP (incluindo envio dos PDFs assinados e CPF/CNPJ do contratado).",
+          "documentos_comprobatorios": [
+            "Log de transmissão API PNCP",
+            "Recibos com numeroControlePNCP"
+          ],
+          "criterio_validacao": "Consulta GET /api/consulta/v1/contratos?cnpjOrgao=66234345000118 retorna os contratos vigentes."
+        },
+        {
+          "ordem": 3,
+          "setor_responsavel": "Controladoria Interna + Procuradoria",
+          "sistema_alvo": "Processo Administrativo",
+          "acao": "Emitir despacho saneador juntando os comprovantes de publicação tardia no PNCP e notificar o ordenador de despesas sobre contratos ainda pendentes.",
+          "documentos_comprobatorios": [
+            "Parecer de saneamento da Controladoria",
+            "Comprovantes PNCP anexados aos autos"
+          ],
+          "criterio_validacao": "Taxa de aderência PNCP de contratos vigentes igual a 100%."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-002",
+      "titulo_apontamento": "Processos licitatórios locais sem publicação no Portal Nacional de Contratações Públicas",
+      "gravidade": "IRREGULARIDADE_GRAVE",
+      "prioridade_execucao": "IMEDIATA_0_5D",
+      "diagnostico_causa_raiz": "Apenas 39 de 178 processos do Memory possuem espelhamento no PNCP (21,9%). Parte dos processos pode estar em plataforma eletrônica sem integração automática ou sob legislação anterior.",
+      "melhor_conducao": "Conferir os 139 processos sem PNCP: publicar no PNCP todos os que sejam da Lei 14.133/21 (inclusive adesões/caronas, dispensas e inexigibilidades) e documentar o amparo da Lei 8.666/93 para os anteriores.",
+      "fundamento_saneamento": "Lei 14.133/2021, Arts. 54, 72, parágrafo único, 94 e 174.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Setor de Licitações",
+          "sistema_alvo": "Portal de Compras / Licitanet / ERP",
+          "acao": "Cruzar a lista dos 139 processos apontados (aba Cruzamento_Licitacoes) com a plataforma eletrônica utilizada.",
+          "documentos_comprobatorios": [
+            "Relação processo x plataforma x lei aplicável"
+          ],
+          "criterio_validacao": "Cada processo possui status definido (publicar no PNCP ou regime 8.666/93)."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "Setor de Licitações + TI",
+          "sistema_alvo": "PNCP (https://pncp.gov.br)",
+          "acao": "Transmitir avisos, editais, atas e termos de homologação faltantes com inteiro teor em PDF (Art. 54).",
+          "documentos_comprobatorios": [
+            "Números de Controle PNCP gerados",
+            "Recibos de envio dos anexos"
+          ],
+          "criterio_validacao": "Reexecução do agente de auditoria eleva aderência PNCP para >= 95% nos processos 14.133/21."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-003",
+      "titulo_apontamento": "Realização de despesa empenhada acima do limite da dotação orçamentária atualizada",
+      "gravidade": "IRREGULARIDADE_GRAVE",
+      "prioridade_execucao": "IMEDIATA_0_5D",
+      "diagnostico_causa_raiz": "Em 2025, 5 dotações/naturezas exibem valor empenhado superior à dotação atualizada no iLAI (ex.: Assistência Social +R$ 149.533,95). Pode decorrer de decreto de suplementação não sincronizado no portal ou empenho sem crédito.",
+      "melhor_conducao": "Verificar imediatamente nos balancetes do SICOM/TCE-MG se houve abertura prévia de crédito adicional para essas 5 rubricas. Se houver decreto, atualizar o portal iLAI; se não houver, promover anulação/estorno ou regularização orçamentária formal.",
+      "fundamento_saneamento": "Lei 4.320/1964, Arts. 42, 43 e 59; CF/88, Art. 167, II.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Contabilidade Municipal",
+          "sistema_alvo": "Contabilidade / SICOM TCE-MG",
+          "acao": "Extrair razão contábil das 5 dotações de 2025 (Assistência Social, Contribuições, Consórcio Público e Obrigações Tributárias).",
+          "documentos_comprobatorios": [
+            "Razão da despesa 2025",
+            "Decretos de créditos adicionais e leis autorizativas"
+          ],
+          "criterio_validacao": "Comprovada existência (ou ausência) de saldo orçamentário na data de cada empenho."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "Contabilidade + TI Memory",
+          "sistema_alvo": "iLAI Memory",
+          "acao": "Corrigir a carga de dotações atualizadas no iLAI caso os decretos existam, ou lavrar nota técnica de ajuste/estorno se houve erro de classificação.",
+          "documentos_comprobatorios": [
+            "Comprovante de reprocessamento SICOM/iLAI",
+            "Nota explicativa contábil"
+          ],
+          "criterio_validacao": "Aba Critica_Orcamentaria zerada para empenhos > dotação."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-006",
+      "titulo_apontamento": "Execução por NAFs superior a 125% do valor contratual registrado",
+      "gravidade": "IRREGULARIDADE_GRAVE",
+      "prioridade_execucao": "IMEDIATA_0_5D",
+      "diagnostico_causa_raiz": "30 contratos apresentam soma de NAFs > 125% do valor contratado (ex.: Contrato 25/2025 com 250 NAFs somando R$ 58,89 milhões sobre contrato de R$ 358 mil — forte indício de NAFs vinculadas ao contrato errado ou execução sem aditivo).",
+      "melhor_conducao": "Bloquear imediatamente novas NAFs sobre os 30 contratos listados na aba Critica_Contratos_NAF até auditar: (a) se houve erro de vínculo de `id_contrato` no ERP ou (b) se houve execução sem termo aditivo/excesso ao limite de 25% do Art. 125.",
+      "fundamento_saneamento": "Lei 14.133/2021, Arts. 124, 125 e 132.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Gestão de Contratos + Compras",
+          "sistema_alvo": "ERP (Módulo NAFs e Contratos)",
+          "acao": "Emitir relatório analítico das NAFs dos 30 contratos críticos (prioridade absoluta: Contrato 25/2025 ID 331) e checar se as NAFs pertencem de fato ao objeto do contrato.",
+          "documentos_comprobatorios": [
+            "Extrato analítico de NAFs por contrato",
+            "Termos aditivos formalizados"
+          ],
+          "criterio_validacao": "Identificada a origem do excedente (erro de vínculo vs acréscimo sem aditivo)."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "Procuradoria Jurídica + Controladoria",
+          "sistema_alvo": "Processo de Aditamento / Apuração",
+          "acao": "Se houver erro de sistema, corrigir o vínculo contábil; se houve execução real acima de 125%, cessar fornecimento, apurar responsabilidade e instruir eventual indenização com justificativa (Art. 149).",
+          "documentos_comprobatorios": [
+            "Parecer jurídico",
+            "Portaria de correção ou apuração de responsabilidade"
+          ],
+          "criterio_validacao": "Saldo de NAFs compatível com valor contratual + aditivos vigentes."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-005",
+      "titulo_apontamento": "Distorções severas entre orçamento máximo estimado e valor homologado",
+      "gravidade": "IRREGULARIDADE_GRAVE",
+      "prioridade_execucao": "CURTO_PRAZO_5_15D",
+      "diagnostico_causa_raiz": "54 processos no Memory têm valor homologado > 50% acima do 'valor_maximo_processo' (ex.: 90/2025, 105/2025, 105/2026). Na maioria dos casos de registro de preços/adesão, ocorre erro de digitação do valor máximo unitário no lugar do global no ERP, ou erro grave de pesquisa de preços.",
+      "melhor_conducao": "Separar o que é erro cadastral do ERP (valor unitário lançado no campo de valor máximo global) do que é efetiva homologação acima do orçamento estimado. Retificar os cadastros errôneos e, havendo sobrepreço real, suspender execução/revogar item.",
+      "fundamento_saneamento": "Lei 14.133/2021, Arts. 18, IV, 23 e 59, III.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Setor de Licitações / Pregoeiro",
+          "sistema_alvo": "Processos Físicos/Digitais + ERP",
+          "acao": "Conferir os 10 maiores processos da aba Critica_Var_Valores (incluindo 90/2025, 105/2025 e 105/2026) comparando Termo de Referência/Pesquisa de Preços com Ata de Homologação.",
+          "documentos_comprobatorios": [
+            "Mapa comparativo de preços (Art. 23)",
+            "Termo de homologação"
+          ],
+          "criterio_validacao": "Confirmado se a divergência é cadastral (unitário vs global) ou financeira real."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "TI / Compras + Controle Interno",
+          "sistema_alvo": "ERP -> iLAI Memory",
+          "acao": "Retificar no ERP o campo 'valor_maximo_processo' nos casos de erro de digitação e republicar no iLAI; caso haja sobrepreço real, instaurar revisão contratual/glosa.",
+          "documentos_comprobatorios": [
+            "Relatório de retificação cadastral",
+            "Termo de repactuação/anulação (se aplicável)"
+          ],
+          "criterio_validacao": "Divergência entre estimado e homologado <= 0% em novas homologações."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-007",
+      "titulo_apontamento": "Dispensas por valor ou acumulados anuais acima do limite legal (risco de fracionamento)",
+      "gravidade": "IRREGULARIDADE_GRAVE",
+      "prioridade_execucao": "CURTO_PRAZO_5_15D",
+      "diagnostico_causa_raiz": "Dispensas ou acumulados anuais em compra direta acima dos tetos do Art. 75, I e II.",
+      "melhor_conducao": "Classificar cada dispensa pelo inciso correto do Art. 75 (ex.: inciso VIII emergência não se sujeita ao teto de baixo valor, mas exige comprovação de emergência real e contratação máxima de 1 ano) e implantar trava sistêmica de fracionamento por subelemento/fornecedor.",
+      "fundamento_saneamento": "Lei 14.133/2021, Art. 75, I, II, VIII e §1º.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Setor de Compras + Jurídico",
+          "sistema_alvo": "Processos de Dispensa",
+          "acao": "Revisar os 16 processos apontados na aba Auditoria_Art75_Dispensas e verificar a fundamentação legal (Art. 75, I/II vs outros incisos).",
+          "documentos_comprobatorios": [
+            "Parecer jurídico da contratação direta (Art. 72, III)",
+            "Justificativa de preço e escolha do fornecedor"
+          ],
+          "criterio_validacao": "100% das dispensas acima do teto devidamente enquadradas em inciso próprio ou justificadas."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "Controladoria + TI",
+          "sistema_alvo": "ERP Compras",
+          "acao": "Ativar bloqueio automático no ERP quando o acumulado anual por objeto/ramo de atividade atingir 80% do limite do Art. 75.",
+          "documentos_comprobatorios": [
+            "Normativa interna de compras diretas",
+            "Print/configuração da trava no ERP"
+          ],
+          "criterio_validacao": "Controle preventivo de fracionamento operacional."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-008",
+      "titulo_apontamento": "Divergências de valores e espelhamento entre Portal Memory e PNCP",
+      "gravidade": "RESSALVA_RELEVANTE",
+      "prioridade_execucao": "CURTO_PRAZO_5_15D",
+      "diagnostico_causa_raiz": "Omissão de razão social/CNPJ nos contratos do iLAI, erro HTTP 500 em servidores/2025, seções vazias no portal institucional (Licitações, Decretos, Leis, Diário Oficial) e divergências de valores entre Memory e PNCP.",
+      "melhor_conducao": "Abrir chamado técnico formal junto à Memory (iLAI) e à mantenedora do site institucional para liberar os campos de contratado/CNPJ nos contratos, corrigir a consulta de servidores/2025 e publicar o acervo de Diário Oficial/Decretos/Leis.",
+      "fundamento_saneamento": "Lei 12.527/2011 (LAI), Art. 8º; LC 131/2009; Lei 14.133/2021, Art. 54.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Controladoria / Ouvidoria / TI",
+          "sistema_alvo": "Chamado Técnico Memory iLAI + Site Institucional",
+          "acao": "Solicitar correção da view OData `comprascontratos` (exibir `fornecedor` e `cpf_cnpj`), correção do erro 500 em `pessoalservidores` (2025) e ativação da carga do Diário Oficial/Decretos/Leis no site.",
+          "documentos_comprobatorios": [
+            "Protocolo de chamado técnico com SLA",
+            "Checklist Atricon/Radar da Transparência"
+          ],
+          "criterio_validacao": "Campos de fornecedor/CNPJ preenchidos e Diário Oficial retornando edições publicadas."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "Setor de Licitações",
+          "sistema_alvo": "Memory iLAI × PNCP",
+          "acao": "Reconciliar os 17 processos com divergência financeira > 20% entre Memory e PNCP.",
+          "documentos_comprobatorios": [
+            "Planilha de conciliação saneada"
+          ],
+          "criterio_validacao": "Diferenças justificadas ou corrigidas nas duas bases."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-009",
+      "titulo_apontamento": "Homonímia exata entre fornecedores pagos e servidores municipais",
+      "gravidade": "RESSALVA_RELEVANTE",
+      "prioridade_execucao": "CURTO_PRAZO_5_15D",
+      "diagnostico_causa_raiz": "Coincidência exata de nome completo entre 127 registros na base de fornecedores e a folha de servidores (como o iLAI mascara parte do CPF na transparência, não é possível distinguir homônimos de servidores reais sem o CPF integral).",
+      "melhor_conducao": "Executar batimento interno de CPF completo (11 dígitos) entre a contabilidade e o RH, separando o que é pagamento de diária/suprimento de fundos/reembolso ao próprio servidor de eventual contratação comercial vedada.",
+      "fundamento_saneamento": "Lei 14.133/2021, Art. 9º, §1º e Art. 14, IV.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Recursos Humanos + Contabilidade",
+          "sistema_alvo": "Folha de Pagamento × Contabilidade",
+          "acao": "Cruzar os 127 nomes apontados na aba Fornecedores_CurvaABC por CPF completo (11 dígitos) e natureza da despesa (3.3.90.14 diárias vs fornecimento/serviços).",
+          "documentos_comprobatorios": [
+            "Relatório de batimento por CPF completo",
+            "Notas de empenho classificadas por elemento"
+          ],
+          "criterio_validacao": "100% dos casos classificados como diária/homônimo legítimo ou contratação vedada."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "Controladoria + Procuradoria",
+          "sistema_alvo": "Processo de Apuração",
+          "acao": "Caso confirmado fornecimento comercial por servidor impedido, rescindir contrato e instaurar sindicância administrativa.",
+          "documentos_comprobatorios": [
+            "Termo de encerramento/rescisão",
+            "Relatório conclusivo da Controladoria"
+          ],
+          "criterio_validacao": "Zero fornecimentos comerciais ativos com servidores impedidos."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-010",
+      "titulo_apontamento": "Omissão de identificação de contratados em contratos e lacunas de transparência ativa",
+      "gravidade": "RESSALVA_RELEVANTE",
+      "prioridade_execucao": "CURTO_PRAZO_5_15D",
+      "diagnostico_causa_raiz": "Omissão de razão social/CNPJ nos contratos do iLAI, erro HTTP 500 em servidores/2025, seções vazias no portal institucional (Licitações, Decretos, Leis, Diário Oficial) e divergências de valores entre Memory e PNCP.",
+      "melhor_conducao": "Abrir chamado técnico formal junto à Memory (iLAI) e à mantenedora do site institucional para liberar os campos de contratado/CNPJ nos contratos, corrigir a consulta de servidores/2025 e publicar o acervo de Diário Oficial/Decretos/Leis.",
+      "fundamento_saneamento": "Lei 12.527/2011 (LAI), Art. 8º; LC 131/2009; Lei 14.133/2021, Art. 54.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Controladoria / Ouvidoria / TI",
+          "sistema_alvo": "Chamado Técnico Memory iLAI + Site Institucional",
+          "acao": "Solicitar correção da view OData `comprascontratos` (exibir `fornecedor` e `cpf_cnpj`), correção do erro 500 em `pessoalservidores` (2025) e ativação da carga do Diário Oficial/Decretos/Leis no site.",
+          "documentos_comprobatorios": [
+            "Protocolo de chamado técnico com SLA",
+            "Checklist Atricon/Radar da Transparência"
+          ],
+          "criterio_validacao": "Campos de fornecedor/CNPJ preenchidos e Diário Oficial retornando edições publicadas."
+        },
+        {
+          "ordem": 2,
+          "setor_responsavel": "Setor de Licitações",
+          "sistema_alvo": "Memory iLAI × PNCP",
+          "acao": "Reconciliar os 17 processos com divergência financeira > 20% entre Memory e PNCP.",
+          "documentos_comprobatorios": [
+            "Planilha de conciliação saneada"
+          ],
+          "criterio_validacao": "Diferenças justificadas ou corrigidas nas duas bases."
+        }
+      ]
+    },
+    {
+      "codigo_apontamento": "AP-011",
+      "titulo_apontamento": "Variações interanuais abruptas (2025 × 2026) e concentração atípica de diárias",
+      "gravidade": "RECOMENDACAO_CONTROLE",
+      "prioridade_execucao": "ESTRUTURANTE_15_30D",
+      "diagnostico_causa_raiz": "Variações orçamentárias interanuais abruptas e concentração estatística de diárias por servidor.",
+      "melhor_conducao": "Instituir revisão trimestral de metas orçamentárias e teto/prestação de contas simplificada de diárias.",
+      "fundamento_saneamento": "CF/88, Art. 37 (Eficiência/Economicidade); LRF Art. 1º, §1º.",
+      "passos": [
+        {
+          "ordem": 1,
+          "setor_responsavel": "Planejamento / Controle Interno",
+          "sistema_alvo": "Execução Orçamentária e Diárias",
+          "acao": "Solicitar justificativa às secretarias com variação > 150% e auditar os relatórios de viagem dos servidores acima do limite IQR.",
+          "documentos_comprobatorios": [
+            "Notas técnicas das secretarias",
+            "Comprovantes de viagem/diárias"
+          ],
+          "criterio_validacao": "Amostragem de diárias e variações orçamentárias formalmente justificadas."
+        }
+      ]
+    }
+  ]
+}

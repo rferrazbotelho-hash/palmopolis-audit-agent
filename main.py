@@ -15,6 +15,7 @@ from connectors.pncp_client import PNCPClient
 from connectors.portal_scraper import PortalScraper
 from engine.analise_critica import AnalisadorCritico
 from engine.fiscal_contas import FiscalContasPublicas, export_relatorio_fiscal
+from engine.fiscal_corretor import FiscalCorretor, export_plano_corretor
 from engine.reconciliador import Reconciliador
 from engine.report_builder import build_analise_critica_html, build_dashboard_html, build_excel_master
 
@@ -126,6 +127,10 @@ def main() -> int:
     rel_fiscal = FiscalContasPublicas(audit_result, critica_result).emitir_relatorio()
     fiscal_paths = export_relatorio_fiscal(rel_fiscal)
 
+    # 5d. Fiscal Corretor — Melhor Condução e Plano Passo a Passo
+    plano_corretor = FiscalCorretor(rel_fiscal).gerar_plano()
+    corretor_paths = export_plano_corretor(plano_corretor)
+
     # 6. Geração de Relatórios
     xlsx_path: Path = build_excel_master(audit_result)
     html_path: Path = build_dashboard_html(audit_result, statuses_dicts)
@@ -163,6 +168,8 @@ def main() -> int:
     log.info("Análise Crítica  : %s (%d variações/inconsistências)", critica_html_path, len(critica_result.anomalias))
     log.info("Fiscal de Contas : %s (%d apontamentos: %d graves, %d ressalvas)",
              fiscal_paths["md"], rel_fiscal.total_apontamentos, rel_fiscal.graves, rel_fiscal.ressalvas)
+    log.info("Fiscal Corretor  : %s (%d roteiros, %d passos)",
+             corretor_paths["md"], plano_corretor.total_roteiros, plano_corretor.total_passos)
     log.info("Resumo JSON      : %s", resumo_json)
     log.info("Achados gerados  : %d (Críticos=%d, Altos=%d, Médios=%d)",
              audit_result.kpis.get("achados_total", 0),

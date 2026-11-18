@@ -34,10 +34,12 @@ def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
     resumo_p = OUTPUT_DIR / "resumo_auditoria.json"
     critica_p = OUTPUT_DIR / "analise_critica.json"
     fiscal_p = OUTPUT_DIR / "apontamentos_fiscal_contas.json"
+    corretor_p = OUTPUT_DIR / "plano_correcao_fiscal_corretor.json"
 
     resumo = json.loads(resumo_p.read_text(encoding="utf-8")) if resumo_p.exists() else {"kpis": {}, "achados": []}
     critica = json.loads(critica_p.read_text(encoding="utf-8")) if critica_p.exists() else {"resumo_eixos": {}, "anomalias": []}
     fiscal = json.loads(fiscal_p.read_text(encoding="utf-8")) if fiscal_p.exists() else {"apontamentos": []}
+    corretor = json.loads(corretor_p.read_text(encoding="utf-8")) if corretor_p.exists() else {"roteiros": []}
 
     mem, pncp, portal, statuses = _load_from_raw(settings.audit_exercicios)
     audit = Reconciliador(mem, pncp, portal, statuses, settings.audit_exercicios).run()
@@ -67,6 +69,7 @@ def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
         "resumo": resumo,
         "critica": critica,
         "fiscal": fiscal,
+        "corretor": corretor,
         "statuses": statuses,
         "tables": tables,
     })
@@ -138,6 +141,7 @@ _INDEX_HTML = r"""<!DOCTYPE html>
     <a href="/files/dashboard_executivo_palmopolis.html" target="_blank">Dashboard Executivo</a>
     <a href="/files/painel_analise_critica.html" target="_blank">Painel Análise Crítica</a>
     <a href="/files/relatorio_fiscal_contas_palmopolis.html" target="_blank">Relatório Fiscal (Impressão)</a>
+    <a href="/files/plano_correcao_fiscal_corretor.html" target="_blank">Plano Corretor (Impressão)</a>
     <a href="/files/auditoria_palmopolis_master.xlsx" target="_blank">Baixar Excel (.xlsx)</a>
   </div>
 </header>
@@ -145,6 +149,7 @@ _INDEX_HTML = r"""<!DOCTYPE html>
 <nav>
   <button class="active" data-tab="visao">Visão Executiva</button>
   <button data-tab="fiscal">Fiscal de Contas Públicas</button>
+  <button data-tab="corretor">Fiscal Corretor (Passo a Passo)</button>
   <button data-tab="critica">Análise Crítica (Variações)</button>
   <button data-tab="tabelas">Explorador de Bases</button>
   <button data-tab="cobertura">Cobertura &amp; Endpoints</button>
@@ -177,6 +182,21 @@ _INDEX_HTML = r"""<!DOCTYPE html>
       <input type="search" id="flt-fiscal-txt" placeholder="Filtrar apontamentos por título, lei ou evidência..." />
     </div>
     <div id="fiscal-list"></div>
+  </section>
+
+  <!-- ABA 2B: FISCAL CORRETOR -->
+  <section id="tab-corretor" class="tab">
+    <div id="corretor-resumo" class="parecer" style="background:#ecfdf5;border-color:#a7f3d0;border-left-color:#059669;"></div>
+    <div class="toolbar">
+      <select id="flt-prio">
+        <option value="">Todas as prioridades</option>
+        <option value="IMEDIATA_0_5D">Imediata (0 a 5 dias)</option>
+        <option value="CURTO_PRAZO_5_15D">Curto Prazo (5 a 15 dias)</option>
+        <option value="ESTRUTURANTE_15_30D">Estruturante (15 a 30 dias)</option>
+      </select>
+      <input type="search" id="flt-corretor-txt" placeholder="Filtrar roteiro por setor, sistema, ação ou apontamento..." />
+    </div>
+    <div id="corretor-list"></div>
   </section>
 
   <!-- ABA 3: ANÁLISE CRÍTICA -->
@@ -300,6 +320,12 @@ async function init() {
   document.getElementById('flt-grav').onchange = renderFiscal;
   document.getElementById('flt-fiscal-txt').oninput = renderFiscal;
 
+  // Corretor
+  document.getElementById('corretor-resumo').textContent = (DATA.corretor && DATA.corretor.resumo_executivo) || '';
+  renderCorretor();
+  document.getElementById('flt-prio').onchange = renderCorretor;
+  document.getElementById('flt-corretor-txt').oninput = renderCorretor;
+
   // Crítica
   const eixos = Object.keys(DATA.critica.resumo_eixos || {});
   document.getElementById('flt-eixo').innerHTML += eixos.map(e => `<option value="${e}">${e}</option>`).join('');
@@ -335,6 +361,26 @@ function renderFiscal() {
       <p style="margin:4px 0;font-size:13px"><strong>Risco:</strong> ${ap.risco_procedimental}</p>
       <p style="margin:6px 0 2px;font-size:12.5px"><strong>Evidências:</strong> ${(ap.evidencias_principais||[]).join(' • ')}</p>
       <p style="margin:6px 0 0;background:#f8fafc;padding:8px;border-left:3px solid #1d4ed8;font-size:13px"><strong>Determinação:</strong> ${ap.determinacao_ao_gestor}</p>
+    </div>
+  `).join('');
+}
+
+function renderCorretor() {
+  const prio = document.getElementById('flt-prio').value;
+  const q = document.getElementById('flt-corretor-txt').value.toLowerCase();
+  const list = ((DATA.corretor && DATA.corretor.roteiros) || []).filter(r =>
+    (!prio || r.prioridade_execucao === prio) && (!q || JSON.stringify(r).toLowerCase().includes(q))
+  );
+  document.getElementById('corretor-list').innerHTML = list.map(r => `
+    <div class="ap-card" style="border-left-color:${r.prioridade_execucao==='IMEDIATA_0_5D'?'#b91c1c':r.prioridade_execucao==='CURTO_PRAZO_5_15D'?'#c2410c':'#1d4ed8'}">
+      <span class="badge ${r.gravidade}">${r.prioridade_execucao}</span>
+      <span style="font-size:12px;color:#64748b;margin-left:8px">${r.gravidade}</span>
+      <h3 style="margin:8px 0 4px;color:#0f294a">${r.codigo_apontamento} — ${r.titulo_apontamento}</h3>
+      <p style="margin:4px 0;font-size:13px"><strong>Causa-Raiz:</strong> ${r.diagnostico_causa_raiz}</p>
+      <p style="margin:4px 0;font-size:13px"><strong>Melhor Condução:</strong> ${r.melhor_conducao}</p>
+      <p style="margin:4px 0 8px;font-size:12px;color:#475569"><strong>Fundamento:</strong> ${r.fundamento_saneamento}</p>
+      <table><thead><tr><th>Passo</th><th>Setor Responsável</th><th>Sistema</th><th>Ação Executável</th><th>Documentos</th><th>Validação</th></tr></thead>
+      <tbody>${(r.passos||[]).map(p => `<tr><td><strong>${p.ordem}</strong></td><td>${p.setor_responsavel}</td><td>${p.sistema_alvo}</td><td>${p.acao}</td><td>${(p.documentos_comprobatorios||[]).join('; ')}</td><td>${p.criterio_validacao}</td></tr>`).join('')}</tbody></table>
     </div>
   `).join('');
 }

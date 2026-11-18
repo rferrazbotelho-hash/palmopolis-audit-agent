@@ -5,3 +5,5 @@ __pycache__/
 data/logs/
 data/test_lab/
 data/raw/
+
+.vercel

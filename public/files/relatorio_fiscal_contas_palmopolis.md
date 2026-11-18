@@ -1,6 +1,6 @@
 # RELATÓRIO TÉCNICO DE FISCALIZAÇÃO DE CONTAS PÚBLICAS
 **Entidade:** Prefeitura Municipal de Palmópolis/MG | **CNPJ:** `66234345000118`  
-**Exercícios Auditados:** 2025, 2026 | **Emissão:** 17/11/2026 22:27
+**Exercícios Auditados:** 2025, 2026 | **Emissão:** 17/11/2026 23:11
 
 > **Parecer Síntese:** CONCLUSÃO TÉCNICA PRELIMINAR: Diante das 6 irregularidade(s) grave(s) e 3 ressalva(s) relevante(s) apuradas nos exercícios de 2025, 2026, recomenda-se a INSTAURAÇÃO DE DILIGÊNCIA / CITAÇÃO DO GESTOR para saneamento documental e regularização imediata dos registros no PNCP, no Portal iLAI e no SICOM/TCE-MG.
 
