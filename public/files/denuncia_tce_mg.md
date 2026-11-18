@@ -133,4 +133,4 @@ Diante do exposto, requer-se a Vossa Excelência:
 4. A aplicação das **sanções cabíveis** (Art. 83 e Art. 85 da LC 102/2008) caso não saneadas ou comprovado dano ao erário.
 
 Termos em que pede deferimento.
-Palmópolis/MG, 17/11/2026.
+Palmópolis/MG, 18/11/2026.

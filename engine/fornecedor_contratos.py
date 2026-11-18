@@ -1,10 +1,13 @@
-"""Pesquisador de Contratos por Fornecedor e Lista Cronológica de Recebimentos.
+"""Pesquisador de Contratos por Fornecedor, Análise Detalhada de Contratos e Recebimentos Cronológicos.
 
-Cruza Contratos x NAFs x Empenhos x Pagamentos do Portal iLAI (Memory) para:
-1. Recuperar o fornecedor e CPF/CNPJ reais de cada contrato (via NAFs vinculadas);
+Cruza Contratos x Licitações x NAFs x Pagamentos do Portal iLAI (Memory) para:
+1. Enriquecer cada contrato com Empresa Homologada (fornecedor_nome/fornecedor_cpf_cnpj
+   do próprio contrato + fallback NAFs) e dados do Processo Licitatório vinculado;
 2. Montar o pesquisador de contratos por fornecedor em lista;
-3. Gerar a lista completa de recebimentos em ordem cronológica contendo:
-   Data, Fornecedor, Empenho, Contrato, Objeto e Valor Recebido.
+3. Gerar a lista completa de recebimentos em ordem cronológica (Data, Fornecedor,
+   Empenho, Contrato, Objeto, Valor Recebido);
+4. Fornecer o descritivo completo (Processo, Contrato, Empresa Homologada e Extrato
+   de Pagamentos) para a aba de Análise de Contratos.
 """
 from __future__ import annotations
 
@@ -44,17 +47,29 @@ class PesquisadorContratosRecebimentos:
 
     def build(self) -> dict[str, Any]:
         contratos = self.mem.get("contratos", [])
+        licitacoes = self.mem.get("licitacoes", [])
         nafs = self.mem.get("naf", [])
         pagamentos = self.mem.get("pagamentos", [])
 
-        # Índices auxiliares por contrato e por empenho
+        # Índices de licitações por id_licitacao e por (numero_licitacao, exercicio)
+        lic_by_id: dict[str, dict[str, Any]] = {}
+        lic_by_num: dict[tuple[str, Any], dict[str, Any]] = {}
+        for l in licitacoes:
+            lid = str(l.get("id_licitacao") or "").strip()
+            if lid:
+                lic_by_id[lid] = l
+            nlic = str(l.get("numero_licitacao") or "").strip()
+            if nlic:
+                lic_by_num[(nlic, l.get("exercicio"))] = l
+
+        # Índice de contratos por id_contrato
         ctr_by_id: dict[str, dict[str, Any]] = {}
         for c in contratos:
             cid = str(c.get("id_contrato") or "").strip()
             if cid and cid not in ctr_by_id:
                 ctr_by_id[cid] = c
 
-        # NAFs: mapeia id_contrato -> fornecedores/nafs, e id_empenho -> contrato
+        # NAFs: mapeia id_contrato -> nafs, e id_empenho -> contrato
         nafs_by_ctr: dict[str, list[dict[str, Any]]] = {}
         emp_to_ctr: dict[str, dict[str, Any]] = {}
         for n in nafs:
@@ -74,7 +89,6 @@ class PesquisadorContratosRecebimentos:
         # 1. Lista cronológica de recebimentos (pagamentos)
         recebimentos: list[dict[str, Any]] = []
         pago_by_ctr: dict[str, float] = {}
-        pago_by_forn: dict[str, float] = {}
 
         for p in pagamentos:
             dt_iso, dt_br = _iso_date(p.get("data_pagamento_format") or p.get("data_pagamento"))
@@ -95,9 +109,6 @@ class PesquisadorContratosRecebimentos:
 
             if cid:
                 pago_by_ctr[cid] = round(pago_by_ctr.get(cid, 0.0) + valor_pago, 2)
-            forn_key = _only_digits(cpf_cnpj) or forn_nome.upper()
-            if forn_key:
-                pago_by_forn[forn_key] = round(pago_by_forn.get(forn_key, 0.0) + valor_pago, 2)
 
             recebimentos.append({
                 "data_iso": dt_iso,
@@ -107,33 +118,43 @@ class PesquisadorContratosRecebimentos:
                 "cpf_cnpj": cpf_cnpj,
                 "empenho": empenho_lbl,
                 "id_empenho": eid,
+                "numero_pagamento": str(p.get("numero_pagamento") or "").strip(),
                 "contrato": num_ctr,
                 "id_contrato": cid,
                 "objeto": obj,
+                "des_despesa": str(p.get("des_despesa") or "").strip(),
                 "valor_recebido": valor_pago,
                 "nota_fiscal": str(p.get("nota_fiscal") or "").strip(),
             })
 
         recebimentos.sort(key=lambda r: (r["data_iso"], str(r["empenho"])))
 
-        # 2. Contratos enriquecidos com fornecedor (via NAF) e valor pago
+        # 2. Contratos enriquecidos com fornecedor, processo e valores
         contratos_lista: list[dict[str, Any]] = []
         forn_contratos_count: dict[str, dict[str, Any]] = {}
 
         for c in contratos:
             cid = str(c.get("id_contrato") or "").strip()
             nafs_c = nafs_by_ctr.get(cid, [])
-            forn_nome = str(c.get("fornecedor") or "").strip()
-            cpf_cnpj = str(c.get("cpf_cnpj") or "").strip()
+
+            forn_nome = str(c.get("fornecedor_nome") or c.get("fornecedor") or "").strip()
+            cpf_cnpj = str(c.get("fornecedor_cpf_cnpj") or c.get("cpf_cnpj") or "").strip()
 
             if not forn_nome and nafs_c:
                 nomes = sorted({str(x.get("fornecedor_nome") or "").strip() for x in nafs_c if x.get("fornecedor_nome")})
                 cnpjs = sorted({str(x.get("fornecedor_cpf_cnpj") or "").strip() for x in nafs_c if x.get("fornecedor_cpf_cnpj")})
-                forn_nome = " | ".join(nomes) if nomes else "NÃO IDENTIFICADO NA NAF"
+                forn_nome = " | ".join(nomes) if nomes else ""
                 cpf_cnpj = " | ".join(cnpjs)
 
             if not forn_nome:
                 forn_nome = "NÃO IDENTIFICADO NA TRANSPARÊNCIA"
+
+            # Dados do processo vinculado
+            num_lic = str(c.get("numero_licitacao") or c.get("licitacao_numero") or "").strip()
+            id_lic = str(c.get("id_licitacao") or "").strip()
+            lic_obj = lic_by_id.get(id_lic) or lic_by_num.get((num_lic, c.get("exercicio")))
+            num_direta = str(c.get("numero_compradireta") or "").strip()
+            processo_lbl = num_lic or (f"Compra Direta {num_direta}" if num_direta else "-")
 
             val_ctr = round(_to_float(c.get("valor_contrato")), 2)
             val_nafs = round(sum(_to_float(x.get("valor_total")) for x in nafs_c), 2)
@@ -146,9 +167,17 @@ class PesquisadorContratosRecebimentos:
                 "fornecedor_nome": forn_nome,
                 "cpf_cnpj": cpf_cnpj,
                 "modalidade": str(c.get("modalidade") or "").strip(),
+                "tipo_ato": str(c.get("tipo_ato") or "").strip(),
                 "situacao": str(c.get("situacao") or "").strip(),
                 "inicio_vigencia": str(c.get("inicio_vigencia") or "").strip(),
                 "termino_vigencia": str(c.get("termino_vigencia") or "").strip(),
+                "data_assinatura": str(c.get("data_assinatura") or "").strip(),
+                "data_publicacao": str(c.get("data_publicacao") or "").strip(),
+                "processo_numero": processo_lbl,
+                "id_processo": str(c.get("id_processo") or "").strip(),
+                "data_processo": str(c.get("data_processo") or "").strip(),
+                "processo_situacao": str(lic_obj.get("situacao") or "").strip() if lic_obj else "",
+                "processo_valor_homologado": round(_to_float(lic_obj.get("valor_homologado")), 2) if lic_obj else 0.0,
                 "valor_contrato": val_ctr,
                 "qtd_nafs": len(nafs_c),
                 "valor_nafs": val_nafs,
@@ -157,9 +186,8 @@ class PesquisadorContratosRecebimentos:
             }
             contratos_lista.append(item)
 
-            # Índice agrupado por fornecedor para seleção em lista
             for nome_ind in [x.strip() for x in forn_nome.split("|") if x.strip()]:
-                fkey = nome_ind.upper()
+                fkey = _only_digits(cpf_cnpj) or nome_ind.upper()
                 entry = forn_contratos_count.setdefault(fkey, {
                     "fornecedor_nome": nome_ind,
                     "cpf_cnpj": cpf_cnpj,

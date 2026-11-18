@@ -28,4 +28,4 @@ Requer-se ao Ministério Público do Estado de Minas Gerais:
 2. A **requisição ao Município** do batimento de CPF completo dos 127 casos de homonímia (`AP-009`), das notas fiscais e termos aditivos dos 30 contratos extrapolados por NAFs (`AP-006`) e dos decretos orçamentários de 2025 (`AP-003`);
 3. A **expedição de Recomendação Ministerial** para publicação imediata dos contratos no PNCP (Art. 94) e regularização dos dados abertos no portal de transparência, ou propositura de **Ação Civil Pública** caso comprovado dano ao erário.
 
-Palmópolis/MG, 17/11/2026.
+Palmópolis/MG, 18/11/2026.

@@ -75,6 +75,7 @@
   <button data-tab="corretor">Fiscal Corretor (Passo a Passo)</button>
   <button data-tab="juridico">Agente Jurídico (TCE-MG / MPMG / TCU)</button>
   <button data-tab="pesquisador">Contratos &amp; Recebimentos</button>
+  <button data-tab="analise_contrato">Análise de Contratos</button>
   <button data-tab="diarias">Pagamento de Diárias</button>
   <button data-tab="critica">Análise Crítica (Variações)</button>
   <button data-tab="tabelas">Explorador de Bases</button>
@@ -183,6 +184,43 @@
             <table>
               <thead><tr><th>Data</th><th>Fornecedor</th><th>Empenho</th><th>Contrato</th><th>Objeto</th><th class="num">Valor Recebido</th><th>NF</th></tr></thead>
               <tbody id="tb-rec-cron"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 2F: ANÁLISE DE CONTRATOS (FILTROS EM LISTAS + DESCRITIVO + EXTRATO) -->
+  <section id="tab-analise-contrato" class="tab">
+    <div class="toolbar">
+      <select id="flt-ac-num" style="min-width:210px;"><option value="">Filtrar por Nº do Contrato (Todos)</option></select>
+      <select id="flt-ac-obj" style="max-width:360px;"><option value="">Filtrar por Objeto (Todos)</option></select>
+      <input type="search" id="flt-ac-txt" placeholder="Buscar contrato, objeto, processo ou empresa..." />
+      <button id="btn-ac-limpar" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;">Limpar Filtros</button>
+    </div>
+    <div style="display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start;">
+      <div class="card" style="padding:12px;">
+        <h2 style="font-size:14px;">Contratos (<span id="cnt-ac-lista">0</span>)</h2>
+        <div id="ac-lista-lateral" style="max-height:680px;overflow:auto;font-size:12.5px;"></div>
+      </div>
+      <div>
+        <div id="ac-descritivo" class="card">
+          <h2>Descritivo do Contrato Selecionado</h2>
+          <p style="color:#64748b;font-size:13px;">Selecione um contrato na lista ao lado ou nos filtros acima.</p>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+            <h2 style="margin:0;border:none;padding:0;">Extrato de Pagamentos (<span id="cnt-ac-ext">0</span>)</h2>
+            <label style="font-size:12.5px;color:#334155;cursor:pointer;">
+              <input type="checkbox" id="chk-ac-por-objeto" /> Incluir pagamentos com objeto semelhante
+            </label>
+          </div>
+          <div id="ac-ext-resumo" style="margin-bottom:10px;font-size:13px;font-weight:600;color:#0f294a;"></div>
+          <div class="tbl-wrap" style="max-height:360px;">
+            <table>
+              <thead><tr><th>Data</th><th>Empenho</th><th>Pgto</th><th>NF</th><th>Fornecedor</th><th>Contrato</th><th>Descrição / Objeto</th><th class="num">Valor Pago</th></tr></thead>
+              <tbody id="tb-ac-ext"></tbody>
             </table>
           </div>
         </div>
@@ -396,6 +434,7 @@ async function initPesquisador() {
   renderFornecedoresLista();
   renderContratosFornecedor();
   renderRecebimentosCron();
+  initAnaliseContratos();
 }
 
 function renderFornecedoresLista() {
@@ -450,6 +489,146 @@ function renderRecebimentosCron() {
   document.getElementById('tb-rec-cron').innerHTML = rows.slice(0, 500).map(r =>
     `<tr><td style="white-space:nowrap">${r.data}</td><td>${r.fornecedor_nome}<br><small style="color:#64748b">${r.cpf_cnpj||''}</small></td><td style="white-space:nowrap">${r.empenho}</td><td style="white-space:nowrap">${r.contrato}</td><td><small>${String(r.objeto||'').slice(0,180)}</small></td><td class="num"><strong>${brl(r.valor_recebido)}</strong></td><td>${r.nota_fiscal||''}</td></tr>`
   ).join('');
+}
+
+let AC_SEL_ID = '';
+
+function initAnaliseContratos() {
+  if (!PESQ) return;
+  const ctrs = PESQ.contratos || [];
+  const nums = [...new Set(ctrs.map(c => c.numero_contrato).filter(Boolean))];
+  const objs = [...new Set(ctrs.map(c => String(c.objeto || '').slice(0, 95)).filter(Boolean))].sort();
+
+  document.getElementById('flt-ac-num').innerHTML = '<option value="">Filtrar por Nº do Contrato (Todos)</option>' +
+    nums.map(n => `<option value="${n}">${n}</option>`).join('');
+  document.getElementById('flt-ac-obj').innerHTML = '<option value="">Filtrar por Objeto (Todos)</option>' +
+    objs.map(o => `<option value="${o.replace(/"/g, '&quot;')}">${o}</option>`).join('');
+
+  document.getElementById('flt-ac-num').onchange = () => {
+    const num = document.getElementById('flt-ac-num').value;
+    if (num) {
+      const found = ctrs.find(c => c.numero_contrato === num);
+      if (found) AC_SEL_ID = found.id_contrato;
+    }
+    renderAnaliseContratosLista();
+    renderDescritivoEExtrato();
+  };
+  document.getElementById('flt-ac-obj').onchange = () => {
+    const obj = document.getElementById('flt-ac-obj').value;
+    if (obj) {
+      const found = ctrs.find(c => String(c.objeto || '').startsWith(obj));
+      if (found) AC_SEL_ID = found.id_contrato;
+    }
+    renderAnaliseContratosLista();
+    renderDescritivoEExtrato();
+  };
+  document.getElementById('flt-ac-txt').oninput = renderAnaliseContratosLista;
+  document.getElementById('chk-ac-por-objeto').onchange = renderDescritivoEExtrato;
+  document.getElementById('btn-ac-limpar').onclick = () => {
+    document.getElementById('flt-ac-num').value = '';
+    document.getElementById('flt-ac-obj').value = '';
+    document.getElementById('flt-ac-txt').value = '';
+    AC_SEL_ID = ctrs.length ? ctrs[0].id_contrato : '';
+    renderAnaliseContratosLista();
+    renderDescritivoEExtrato();
+  };
+
+  if (ctrs.length) AC_SEL_ID = ctrs[0].id_contrato;
+  renderAnaliseContratosLista();
+  renderDescritivoEExtrato();
+}
+
+function getContratosFiltradosAC() {
+  const num = document.getElementById('flt-ac-num').value;
+  const obj = document.getElementById('flt-ac-obj').value;
+  const q = document.getElementById('flt-ac-txt').value.toLowerCase().trim();
+  return (PESQ.contratos || []).filter(c => {
+    if (num && c.numero_contrato !== num) return false;
+    if (obj && !String(c.objeto || '').startsWith(obj)) return false;
+    if (q && !(c.numero_contrato + ' ' + c.objeto + ' ' + c.fornecedor_nome + ' ' + c.cpf_cnpj + ' ' + c.processo_numero).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+window.selecionarContratoAC = function(idCtr) {
+  AC_SEL_ID = idCtr;
+  renderAnaliseContratosLista();
+  renderDescritivoEExtrato();
+};
+
+function renderAnaliseContratosLista() {
+  if (!PESQ) return;
+  const list = getContratosFiltradosAC();
+  document.getElementById('cnt-ac-lista').textContent = list.length;
+  document.getElementById('ac-lista-lateral').innerHTML = list.slice(0, 350).map(c => {
+    const active = AC_SEL_ID === c.id_contrato;
+    return `<div onclick="selecionarContratoAC('${String(c.id_contrato).replace(/'/g, "\\'")}')" style="padding:9px;border-bottom:1px solid #e2e8f0;cursor:pointer;border-radius:6px;background:${active?'#eff6ff':'transparent'}">
+      <strong style="color:#0f294a">Contrato ${c.numero_contrato}</strong> <span style="color:#64748b">(${c.exercicio || ''})</span><br>
+      <span style="color:#1e40af;font-weight:600">${c.fornecedor_nome}</span><br>
+      <small style="color:#475569">${String(c.objeto || '').slice(0, 95)}...</small><br>
+      <small style="color:#0f294a"><strong>${brl(c.valor_contrato)}</strong> • Pago: ${brl(c.valor_pago_vinculado)}</small>
+    </div>`;
+  }).join('');
+}
+
+function renderDescritivoEExtrato() {
+  if (!PESQ) return;
+  const c = (PESQ.contratos || []).find(x => x.id_contrato === AC_SEL_ID);
+  if (!c) {
+    document.getElementById('ac-descritivo').innerHTML = '<h2>Descritivo do Contrato</h2><p style="color:#64748b">Nenhum contrato selecionado.</p>';
+    document.getElementById('tb-ac-ext').innerHTML = '';
+    return;
+  }
+
+  const pct = c.valor_contrato > 0 ? ((c.valor_pago_vinculado / c.valor_contrato) * 100).toFixed(1) : '0.0';
+  const saldo = c.valor_contrato - c.valor_pago_vinculado;
+
+  document.getElementById('ac-descritivo').innerHTML = `
+    <h2>Descritivo Completo — Contrato ${c.numero_contrato} (${c.exercicio || ''})</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:12px;">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+        <div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;">1. Processo Originário</div>
+        <p style="margin:6px 0 2px;font-size:13px;"><strong>Processo/Licitação:</strong> ${c.processo_numero || '-'}</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>ID Processo:</strong> ${c.id_processo || '-'} | <strong>Data:</strong> ${c.data_processo || '-'}</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>Modalidade:</strong> ${c.modalidade || '-'}</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>Situação Processo:</strong> ${c.processo_situacao || c.situacao || '-'}</p>
+        ${c.processo_valor_homologado ? `<p style="margin:2px 0;font-size:13px;"><strong>Homologado Processo:</strong> ${brl(c.processo_valor_homologado)}</p>` : ''}
+      </div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+        <div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;">2. Dados do Contrato</div>
+        <p style="margin:6px 0 2px;font-size:13px;"><strong>Contrato Nº:</strong> ${c.numero_contrato} (${c.tipo_ato || 'Contrato'})</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>Vigência:</strong> ${c.inicio_vigencia || '-'} a ${c.termino_vigencia || '-'}</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>Assinatura / Pub.:</strong> ${c.data_assinatura || '-'} / ${c.data_publicacao || '-'}</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>Valor Contrato:</strong> <strong>${brl(c.valor_contrato)}</strong></p>
+        <p style="margin:2px 0;font-size:13px;"><strong>NAFs Emitidas:</strong> ${c.qtd_nafs} (${brl(c.valor_nafs)})</p>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;">
+        <div style="font-size:11px;text-transform:uppercase;color:#1e40af;font-weight:700;">3. Empresa Homologada &amp; Execução</div>
+        <p style="margin:6px 0 2px;font-size:13.5px;color:#0f294a;"><strong>${c.fornecedor_nome}</strong></p>
+        <p style="margin:2px 0;font-size:13px;"><strong>CPF/CNPJ:</strong> ${c.cpf_cnpj || '-'}</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>Total Pago no Contrato:</strong> <strong style="color:#15803d">${brl(c.valor_pago_vinculado)}</strong> (${pct}%)</p>
+        <p style="margin:2px 0;font-size:13px;"><strong>Saldo Contratual:</strong> ${brl(saldo)}</p>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:13px;">
+      <strong>Objeto:</strong> ${c.objeto || '-'}
+    </div>
+  `;
+
+  const incluirObj = document.getElementById('chk-ac-por-objeto').checked;
+  const objSnippet = String(c.objeto || '').trim().slice(0, 45).toLowerCase();
+  const ext = (PESQ.recebimentos_cronologicos || []).filter(r => {
+    if (r.id_contrato && r.id_contrato === c.id_contrato) return true;
+    if (r.contrato && r.contrato === c.numero_contrato) return true;
+    if (incluirObj && objSnippet.length >= 12 && String(r.objeto || '').toLowerCase().includes(objSnippet)) return true;
+    return false;
+  });
+  const totalExt = ext.reduce((s, x) => s + Number(x.valor_recebido || 0), 0);
+  document.getElementById('cnt-ac-ext').textContent = ext.length;
+  document.getElementById('ac-ext-resumo').textContent = `Total no Extrato: ${brl(totalExt)} em ${ext.length} pagamento(s)`;
+  document.getElementById('tb-ac-ext').innerHTML = ext.length
+    ? ext.map(r => `<tr><td style="white-space:nowrap">${r.data}</td><td style="white-space:nowrap">${r.empenho}</td><td>${r.numero_pagamento||''}</td><td>${r.nota_fiscal||''}</td><td>${r.fornecedor_nome}</td><td>${r.contrato}</td><td><small>${String(r.objeto||r.des_despesa||'').slice(0,150)}</small></td><td class="num"><strong>${brl(r.valor_recebido)}</strong></td></tr>`).join('')
+    : '<tr><td colspan="8" style="color:#64748b;padding:14px;">Nenhum pagamento vinculado diretamente a este contrato no extrato de 2026 (marque a opção acima para buscar por objeto semelhante).</td></tr>';
 }
 
 let DIA = null;
