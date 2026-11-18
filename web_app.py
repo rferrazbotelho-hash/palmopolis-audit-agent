@@ -22,20 +22,25 @@ from urllib.parse import parse_qs, urlparse
 from config import OUTPUT_DIR, settings
 from engine.analise_critica import AnalisadorCritico
 from engine.reconciliador import Reconciliador
-from main import _load_from_raw
+from main import _load_camara_from_raw, _load_from_raw
 
-_CACHE: dict[str, Any] = {}
+_CACHE: dict[str, dict[str, Any]] = {}
 
 
-def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
-    if _CACHE and not force:
-        return _CACHE
+def _load_portal_bundle(orgao: str = "prefeitura", force: bool = False) -> dict[str, Any]:
+    org = "camara" if orgao == "camara" else "prefeitura"
+    if org in _CACHE and not force:
+        return _CACHE[org]
 
-    resumo_p = OUTPUT_DIR / "resumo_auditoria.json"
-    critica_p = OUTPUT_DIR / "analise_critica.json"
-    fiscal_p = OUTPUT_DIR / "apontamentos_fiscal_contas.json"
-    corretor_p = OUTPUT_DIR / "plano_correcao_fiscal_corretor.json"
-    jur_p = OUTPUT_DIR / "dossie_juridico_tcu.json"
+    out_dir = OUTPUT_DIR / "camara" if org == "camara" else OUTPUT_DIR
+    entidade = settings.camara_nome if org == "camara" else settings.audit_entidade_nome
+    cnpj = settings.camara_cnpj if org == "camara" else settings.audit_cnpj
+
+    resumo_p = out_dir / "resumo_auditoria.json"
+    critica_p = out_dir / "analise_critica.json"
+    fiscal_p = out_dir / "apontamentos_fiscal_contas.json"
+    corretor_p = out_dir / "plano_correcao_fiscal_corretor.json"
+    jur_p = out_dir / "dossie_juridico_tcu.json"
 
     resumo = json.loads(resumo_p.read_text(encoding="utf-8")) if resumo_p.exists() else {"kpis": {}, "achados": []}
     critica = json.loads(critica_p.read_text(encoding="utf-8")) if critica_p.exists() else {"resumo_eixos": {}, "anomalias": []}
@@ -43,7 +48,11 @@ def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
     corretor = json.loads(corretor_p.read_text(encoding="utf-8")) if corretor_p.exists() else {"roteiros": []}
     juridico = json.loads(jur_p.read_text(encoding="utf-8")) if jur_p.exists() else {"validacoes_tcu": []}
 
-    mem, pncp, portal, statuses = _load_from_raw(settings.audit_exercicios)
+    if org == "camara":
+        mem, pncp, portal, statuses = _load_camara_from_raw(settings.audit_exercicios)
+    else:
+        mem, pncp, portal, statuses = _load_from_raw(settings.audit_exercicios)
+
     audit = Reconciliador(mem, pncp, portal, statuses, settings.audit_exercicios).run()
     crit_res = AnalisadorCritico(mem, pncp, audit.dataframes.get("Cruzamento_Licitacoes"), settings.audit_exercicios).run()
     audit.dataframes.update(crit_res.dataframes)
@@ -64,10 +73,12 @@ def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
         else:
             tables[key] = []
 
-    _CACHE.clear()
-    _CACHE.update({
-        "entidade": settings.audit_entidade_nome,
-        "cnpj": settings.audit_cnpj,
+    bundle = {
+        "orgao": org,
+        "files_prefix": "/files_camara" if org == "camara" else "/files",
+        "excel_name": "auditoria_camara_master.xlsx" if org == "camara" else "auditoria_palmopolis_master.xlsx",
+        "entidade": entidade,
+        "cnpj": cnpj,
         "resumo": resumo,
         "critica": critica,
         "fiscal": fiscal,
@@ -75,8 +86,9 @@ def _load_portal_bundle(force: bool = False) -> dict[str, Any]:
         "juridico": juridico,
         "statuses": statuses,
         "tables": tables,
-    })
-    return _CACHE
+    }
+    _CACHE[org] = bundle
+    return bundle
 
 
 _INDEX_HTML = r"""<!DOCTYPE html>
@@ -138,17 +150,42 @@ _INDEX_HTML = r"""<!DOCTYPE html>
 <header>
   <div>
     <h1 id="hdr-title">Central Interativa de Auditoria — Palmópolis/MG</h1>
-    <p id="hdr-sub">Carregando base de auditoria...</p>
+    <p id="hdr-sub">Selecione o órgão avaliado para carregar os dados separados...</p>
   </div>
-  <div class="links-top">
-    <a href="/files/dashboard_executivo_palmopolis.html" target="_blank">Dashboard Executivo</a>
-    <a href="/files/painel_analise_critica.html" target="_blank">Painel Análise Crítica</a>
-    <a href="/files/relatorio_fiscal_contas_palmopolis.html" target="_blank">Relatório Fiscal (Impressão)</a>
-    <a href="/files/plano_correcao_fiscal_corretor.html" target="_blank">Plano Corretor (Impressão)</a>
-    <a href="/files/dossie_juridico_completo.html" target="_blank">Dossiê Jurídico (TCU/TCE/MP)</a>
-    <a href="/files/auditoria_palmopolis_master.xlsx" target="_blank">Baixar Excel (.xlsx)</a>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <select id="sel-orgao-topo" onchange="selecionarOrgao(this.value)" style="background:#fff;color:#0f294a;font-weight:700;padding:7px 12px;border-radius:6px;border:none;cursor:pointer;">
+      <option value="prefeitura">Prefeitura Municipal (CNPJ 66.234.345/0001-18)</option>
+      <option value="camara">Câmara Municipal (CNPJ 03.689.862/0001-61)</option>
+    </select>
+    <div class="links-top" id="links-top">
+      <a id="lnk-dash" href="/files/dashboard_executivo_palmopolis.html" target="_blank">Dashboard Executivo</a>
+      <a id="lnk-crit" href="/files/painel_analise_critica.html" target="_blank">Painel Análise Crítica</a>
+      <a id="lnk-fisc" href="/files/relatorio_fiscal_contas_palmopolis.html" target="_blank">Relatório Fiscal (Impressão)</a>
+      <a id="lnk-corr" href="/files/plano_correcao_fiscal_corretor.html" target="_blank">Plano Corretor (Impressão)</a>
+      <a id="lnk-jur" href="/files/dossie_juridico_completo.html" target="_blank">Dossiê Jurídico (TCU/TCE/MP)</a>
+      <a id="lnk-xlsx" href="/files/auditoria_palmopolis_master.xlsx" target="_blank">Baixar Excel (.xlsx)</a>
+    </div>
   </div>
 </header>
+
+<div id="orgao-picker-overlay" style="position:fixed;inset:0;background:rgba(15,41,74,.86);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;max-width:760px;width:100%;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.35);">
+    <h2 style="margin:0 0 6px;color:#0f294a;font-size:22px;">Selecione o Órgão Público para Auditoria</h2>
+    <p style="margin:0 0 20px;color:#64748b;font-size:13.5px;">Os dados da Prefeitura Municipal (iLAI Memory) e da Câmara Municipal (Sigafi) são processados e exibidos de forma completamente separada.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
+      <button onclick="escolherOrgaoInicial('prefeitura')" style="text-align:left;padding:18px;border:2px solid #cbd5e1;border-radius:10px;background:#f8fafc;cursor:pointer;">
+        <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;">Poder Executivo</div>
+        <div style="font-size:17px;font-weight:700;color:#0f294a;margin:4px 0;">Prefeitura Municipal de Palmópolis/MG</div>
+        <div style="font-size:12.5px;color:#475569;">CNPJ: 66.234.345/0001-18<br>Portal iLAI Memory + PNCP + Site Oficial</div>
+      </button>
+      <button onclick="escolherOrgaoInicial('camara')" style="text-align:left;padding:18px;border:2px solid #cbd5e1;border-radius:10px;background:#f8fafc;cursor:pointer;">
+        <div style="font-size:11px;font-weight:700;color:#047857;text-transform:uppercase;">Poder Legislativo</div>
+        <div style="font-size:17px;font-weight:700;color:#0f294a;margin:4px 0;">Câmara Municipal de Palmópolis/MG</div>
+        <div style="font-size:12.5px;color:#475569;">CNPJ: 03.689.862/0001-61<br>Portal Sigafi (19 endpoints) + PNCP + Site Oficial</div>
+      </button>
+    </div>
+  </div>
+</div>
 
 <nav>
   <button class="active" data-tab="visao">Visão Executiva</button>
@@ -396,6 +433,9 @@ _INDEX_HTML = r"""<!DOCTYPE html>
 <script>
 const brl = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 let DATA = null;
+let ORGAO_ATUAL = 'prefeitura';
+let CH_CONC = null;
+let CH_FORN = null;
 
 document.querySelectorAll('nav button').forEach(btn => {
   btn.onclick = () => {
@@ -405,10 +445,33 @@ document.querySelectorAll('nav button').forEach(btn => {
   };
 });
 
-async function init() {
-  let r = await fetch('/api/bundle').catch(() => null);
+window.escolherOrgaoInicial = function(orgao) {
+  document.getElementById('orgao-picker-overlay').style.display = 'none';
+  selecionarOrgao(orgao);
+};
+
+window.selecionarOrgao = async function(orgao) {
+  ORGAO_ATUAL = orgao === 'camara' ? 'camara' : 'prefeitura';
+  document.getElementById('sel-orgao-topo').value = ORGAO_ATUAL;
+  await init(ORGAO_ATUAL);
+};
+
+async function init(orgao = 'prefeitura') {
+  let r = await fetch(`/api/bundle?orgao=${orgao}`).catch(() => null);
+  if (!r || !r.ok) r = await fetch(`./data/bundle_${orgao}.json`).catch(() => null);
   if (!r || !r.ok) r = await fetch('./data/bundle.json');
   DATA = await r.json();
+  const pref = DATA.files_prefix || '/files';
+  document.getElementById('lnk-dash').href = `${pref}/dashboard_executivo_palmopolis.html`;
+  document.getElementById('lnk-crit').href = `${pref}/painel_analise_critica.html`;
+  document.getElementById('lnk-fisc').href = `${pref}/relatorio_fiscal_contas_palmopolis.html`;
+  document.getElementById('lnk-corr').href = `${pref}/plano_correcao_fiscal_corretor.html`;
+  document.getElementById('lnk-jur').href = `${pref}/dossie_juridico_completo.html`;
+  document.getElementById('lnk-xlsx').href = `${pref}/${DATA.excel_name || 'auditoria_palmopolis_master.xlsx'}`;
+  const lnkPesq = document.querySelector('#tab-pesquisador a[href*="contratos_fornecedor"]');
+  if (lnkPesq) lnkPesq.href = `${pref}/contratos_fornecedor_e_recebimentos.xlsx`;
+  const lnkDia = document.querySelector('#tab-diarias a[href*="pagamento_diarias"]');
+  if (lnkDia) lnkDia.href = `${pref}/pagamento_diarias_completo.xlsx`;
   const k = DATA.resumo.kpis || {};
   document.getElementById('hdr-title').textContent = `Central Interativa de Auditoria — ${DATA.entidade}`;
   document.getElementById('hdr-sub').textContent = `CNPJ ${DATA.cnpj} | Exercícios: ${(k.exercicios||[]).join(', ')} | Apontamentos Fiscais: ${(DATA.fiscal.apontamentos||[]).length} | Inconsistências Críticas: ${(DATA.critica.anomalias||[]).length}`;
@@ -429,20 +492,22 @@ async function init() {
     `<tr><td><strong>${a.codigo}</strong></td><td><span class="badge ${a.severidade}">${a.severidade}</span></td><td>${a.base_legal}</td><td><strong>${a.titulo}</strong><br><small style="color:#64748b">${a.descricao}</small></td><td class="num">${a.quantidade}</td><td class="num">${brl(a.valor_envolvido)}</td></tr>`
   ).join('');
 
-  new Chart(document.getElementById('ch-conc'), {
+  if (CH_CONC) CH_CONC.destroy();
+  CH_CONC = new Chart(document.getElementById('ch-conc'), {
     type: 'bar',
     data: {
       labels: ['Licitações', 'Contratos'],
       datasets: [
         { label: 'Conciliados', data: [k.conciliadas_lic_qtd||0, k.conciliados_ctr_qtd||0], backgroundColor: '#15803d' },
-        { label: 'Somente Memory (sem PNCP)', data: [k.sem_pncp_lic_qtd||0, k.sem_pncp_ctr_qtd||0], backgroundColor: '#b91c1c' }
+        { label: 'Somente Local (sem PNCP)', data: [k.sem_pncp_lic_qtd||0, k.sem_pncp_ctr_qtd||0], backgroundColor: '#b91c1c' }
       ]
     },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
   const abc = (DATA.tables.Fornecedores_CurvaABC || []).filter(x => !x.eh_proprio_municipio).slice(0, 10);
-  new Chart(document.getElementById('ch-forn'), {
+  if (CH_FORN) CH_FORN.destroy();
+  CH_FORN = new Chart(document.getElementById('ch-forn'), {
     type: 'bar',
     data: {
       labels: abc.map(x => String(x.fornecedor_nome||'').slice(0, 28)),
@@ -475,7 +540,7 @@ async function init() {
 
   // Crítica
   const eixos = Object.keys(DATA.critica.resumo_eixos || {});
-  document.getElementById('flt-eixo').innerHTML += eixos.map(e => `<option value="${e}">${e}</option>`).join('');
+  document.getElementById('flt-eixo').innerHTML = '<option value="">Todos os eixos</option>' + eixos.map(e => `<option value="${e}">${e}</option>`).join('');
   renderCritica();
   ['flt-eixo', 'flt-crit'].forEach(id => document.getElementById(id).onchange = renderCritica);
   document.getElementById('flt-crit-txt').oninput = renderCritica;
@@ -500,9 +565,11 @@ let FORN_SEL = '';
 let ORDEM_ASC = true;
 
 async function initPesquisador() {
-  let r = await fetch('/files/fornecedor_contratos_recebimentos.json').catch(() => null);
-  if (!r || !r.ok) r = await fetch('./files/fornecedor_contratos_recebimentos.json').catch(() => null);
+  const pref = (DATA && DATA.files_prefix) || '/files';
+  let r = await fetch(`${pref}/fornecedor_contratos_recebimentos.json`).catch(() => null);
+  if (!r || !r.ok) r = await fetch(`.${pref}/fornecedor_contratos_recebimentos.json`).catch(() => null);
   if (!r || !r.ok) return;
+  FORN_SEL = '';
   PESQ = await r.json();
   document.getElementById('flt-forn-list').oninput = renderFornecedoresLista;
   document.getElementById('flt-rec-txt').oninput = renderRecebimentosCron;
@@ -717,12 +784,14 @@ let DIA_SRV_SEL = '';
 let DIA_ASC = true;
 
 async function initDiarias() {
-  let r = await fetch('/files/pagamento_diarias.json').catch(() => null);
-  if (!r || !r.ok) r = await fetch('./files/pagamento_diarias.json').catch(() => null);
+  const pref = (DATA && DATA.files_prefix) || '/files';
+  let r = await fetch(`${pref}/pagamento_diarias.json`).catch(() => null);
+  if (!r || !r.ok) r = await fetch(`.${pref}/pagamento_diarias.json`).catch(() => null);
   if (!r || !r.ok) return;
+  DIA_SRV_SEL = '';
   DIA = await r.json();
   const unids = [...new Set((DIA.pagamentos_diarias || []).map(x => x.unidade_orcamentaria).filter(Boolean))].sort();
-  document.getElementById('flt-dia-unid').innerHTML += unids.map(u => `<option value="${u}">${u}</option>`).join('');
+  document.getElementById('flt-dia-unid').innerHTML = '<option value="">Todas as unidades</option>' + unids.map(u => `<option value="${u}">${u}</option>`).join('');
   document.getElementById('flt-dia-nome-cpf').oninput = () => { renderDiaServidores(); renderDiaPagamentos(); };
   document.getElementById('flt-dia-unid').onchange = () => { renderDiaServidores(); renderDiaPagamentos(); };
   document.getElementById('btn-limpar-dia').onclick = () => {
@@ -903,14 +972,17 @@ class AuditHandler(BaseHTTPRequestHandler):
 
         if path == "/api/bundle":
             q = parse_qs(parsed.query)
-            bundle = _load_portal_bundle(force=q.get("refresh") == ["1"])
+            org = (q.get("orgao") or ["prefeitura"])[0]
+            bundle = _load_portal_bundle(orgao=org, force=q.get("refresh") == ["1"])
             self._send(HTTPStatus.OK, "application/json; charset=utf-8",
                        json.dumps(bundle, ensure_ascii=False, default=str).encode("utf-8"))
             return
 
-        if path.startswith("/files/"):
-            fname = os.path.basename(path[len("/files/"):])
-            fpath = OUTPUT_DIR / fname
+        if path.startswith("/files_camara/") or path.startswith("/files/"):
+            is_cam = path.startswith("/files_camara/")
+            prefix = "/files_camara/" if is_cam else "/files/"
+            fname = os.path.basename(path[len(prefix):])
+            fpath = (OUTPUT_DIR / "camara" / fname) if is_cam else (OUTPUT_DIR / fname)
             if fpath.exists() and fpath.is_file():
                 ctype = (
                     "text/html; charset=utf-8" if fname.endswith(".html")
@@ -924,22 +996,32 @@ class AuditHandler(BaseHTTPRequestHandler):
 
 
 def export_static(dest: Path | None = None) -> Path:
-    """Exporta versão estática completa em public/ para hospedagem no Vercel/GitHub."""
+    """Exporta versão estática completa (Prefeitura + Câmara separadas) em public/."""
     import shutil
 
     out = dest or (Path(__file__).resolve().parent / "public")
     (out / "data").mkdir(parents=True, exist_ok=True)
     (out / "files").mkdir(parents=True, exist_ok=True)
+    (out / "files_camara").mkdir(parents=True, exist_ok=True)
 
-    bundle = _load_portal_bundle(force=True)
     (out / "index.html").write_text(_INDEX_HTML, encoding="utf-8")
-    (out / "data" / "bundle.json").write_text(
-        json.dumps(bundle, ensure_ascii=False, default=str), encoding="utf-8"
-    )
+
+    b_pref = _load_portal_bundle(orgao="prefeitura", force=True)
+    (out / "data" / "bundle.json").write_text(json.dumps(b_pref, ensure_ascii=False, default=str), encoding="utf-8")
+    (out / "data" / "bundle_prefeitura.json").write_text(json.dumps(b_pref, ensure_ascii=False, default=str), encoding="utf-8")
+
+    b_cam = _load_portal_bundle(orgao="camara", force=True)
+    (out / "data" / "bundle_camara.json").write_text(json.dumps(b_cam, ensure_ascii=False, default=str), encoding="utf-8")
+
     for f in OUTPUT_DIR.iterdir():
         if f.is_file():
             shutil.copy2(f, out / "files" / f.name)
-    print(f"Site estático exportado em {out}")
+    cam_out = OUTPUT_DIR / "camara"
+    if cam_out.exists():
+        for f in cam_out.iterdir():
+            if f.is_file():
+                shutil.copy2(f, out / "files_camara" / f.name)
+    print(f"Site estático (Prefeitura + Câmara) exportado em {out}")
     return out
 
 

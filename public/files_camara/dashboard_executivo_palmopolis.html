@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoria Municipal — Câmara Municipal de Palmópolis/MG</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f9; --card: #ffffff; --navy: #1b365d; --accent: #2b6cb0;
+      --crit: #c53030; --alto: #dd6b20; --med: #b7791f; --ok: #2f855a;
+      --border: #e2e8f0; --text: #1a202c; --muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: linear-gradient(135deg, #1b365d, #2b4c7e); color: #fff; padding: 24px 32px; }
+    header h1 { margin: 0 0 6px 0; font-size: 22px; }
+    header p { margin: 0; opacity: 0.9; font-size: 13px; }
+    main { max-width: 1360px; margin: 24px auto; padding: 0 20px 40px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .kpi .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .kpi .val { font-size: 24px; font-weight: 700; color: var(--navy); margin: 6px 0 2px; }
+    .kpi .sub { font-size: 12px; color: var(--muted); }
+    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .card h2 { margin: 0 0 14px; font-size: 16px; color: var(--navy); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: #f8fafc; color: var(--navy); font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .CRITICO { background: #fde2e1; color: var(--crit); }
+    .ALTO { background: #fef0d9; color: var(--alto); }
+    .MEDIO { background: #fff9db; color: var(--med); }
+    .INFO, .OK { background: #e6fffa; color: var(--ok); }
+    .VAZIO, .DEFICIT_TRANSPARENCIA { background: #fff9db; color: var(--med); }
+    .ERRO { background: #fde2e1; color: var(--crit); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Painel Executivo de Auditoria Municipal — Câmara Municipal de Palmópolis/MG</h1>
+  <p>CNPJ 03689862000161 | Exercícios: 2025, 2026 | Referencial: Lei 14.133/2021 (Arts. 9º, 14, 54, 75 e 94) e LAI (Lei 12.527/2011) | Gerado em 18/11/2026 18:08</p>
+</header>
+<main>
+  <section class="kpi-grid">
+    <div class="kpi"><div class="label">Licitações (Memory)</div><div class="val">14</div><div class="sub">Homologado: R$ 0,00</div></div>
+    <div class="kpi"><div class="label">Contratos (Memory)</div><div class="val">26</div><div class="sub">Total: R$ 506.195,42</div></div>
+    <div class="kpi"><div class="label">Contratações no PNCP</div><div class="val">0</div><div class="sub">Contratos PNCP: 0 | Arquivos: 0</div></div>
+    <div class="kpi"><div class="label">Aderência PNCP (Licitações)</div><div class="val">0.0%</div><div class="sub">0 conciliadas | 14 sem PNCP</div></div>
+    <div class="kpi"><div class="label">NAFs Emitidas (Memory)</div><div class="val">0</div><div class="sub">Volume: R$ 0,00</div></div>
+    <div class="kpi"><div class="label">Achados de Auditoria</div><div class="val">5</div><div class="sub">Críticos: 2 | Altos: 2 | Médios: 1</div></div>
+  </section>
+
+  <section class="charts">
+    <div class="card">
+      <h2>Conciliação Local (Memory) x PNCP</h2>
+      <canvas id="chartConc" height="190"></canvas>
+    </div>
+    <div class="card">
+      <h2>Top 10 Fornecedores por Valor Empenhado (R$)</h2>
+      <canvas id="chartForn" height="190"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Matriz de Achados — Lei nº 14.133/2021 e Lei nº 12.527/2011</h2>
+    <table>
+      <thead><tr><th>Código</th><th>Severidade</th><th>Base Legal</th><th>Achado</th><th class="num">Qtd</th><th class="num">Valor Envolvido</th><th>Evidência / Amostra</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>ACH-01</strong></td>
+          <td><span class="badge CRITICO">CRITICO</span></td>
+          <td>Lei 14.133/2021, Arts. 54 e 94</td>
+          <td><strong>Licitações/processos no Portal Memory sem correspondência no PNCP</strong><br><small style="color:#64748b">Foram identificados processos no Portal da Transparência local (Memory) que não possuem publicação correspondente localizada na API do PNCP para o CNPJ do Município.</small></td>
+          <td class="num">14</td>
+          <td class="num">R$ 0,00</td>
+          <td><small>1/2025; 2/2025; 3/2025; 4/2025; 5/2025; 6/2025; 7/2025; 8/2025; 9/2025; 10/2025</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-03</strong></td>
+          <td><span class="badge CRITICO">CRITICO</span></td>
+          <td>Lei 14.133/2021, Art. 94 (Condição de Eficácia)</td>
+          <td><strong>Contratos registrados no Portal Memory sem divulgação localizada no PNCP</strong><br><small style="color:#64748b">O Art. 94 da Lei 14.133/2021 estabelece a divulgação no PNCP como condição indispensável para eficácia do contrato e de seus aditivos.</small></td>
+          <td class="num">26</td>
+          <td class="num">R$ 506.195,42</td>
+          <td><small>0001/2025; 0002/2025; 0003/2025; 0004/2025; 0005/2025; 0006/2025; 0007/2025; 0008/2025; 0009/2025; 0010/2025</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-05</strong></td>
+          <td><span class="badge ALTO">ALTO</span></td>
+          <td>Lei 12.527/2011, Art. 8º, §1º, IV e §3º</td>
+          <td><strong>Contratos no Portal Memory com fornecedor ou CPF/CNPJ ausente</strong><br><small style="color:#64748b">Registros de contratos publicados no portal sem identificação de contratado ou CNPJ/CPF.</small></td>
+          <td class="num">26</td>
+          <td class="num">R$ 506.195,42</td>
+          <td><small>0001/2025; 0002/2025; 0003/2025; 0004/2025; 0005/2025; 0006/2025; 0007/2025; 0008/2025; 0009/2025; 0010/2025</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-08</strong></td>
+          <td><span class="badge ALTO">ALTO</span></td>
+          <td>Lei 14.133/2021, Art. 9º, §1º e Art. 14, IV</td>
+          <td><strong>Fornecedores com homonímia exata no quadro de servidores municipais</strong><br><small style="color:#64748b">Cruzamento nominal entre fornecedores e servidores ativos/contratados identificou coincidência exata de nome completo (CPF parcialmente mascarado pela LAI exige conferência documental).</small></td>
+          <td class="num">12</td>
+          <td class="num">R$ 89.931,88</td>
+          <td><small>ALEXANDRE PEREIRA DA ROCHA; ARI GIL DE SOUZA NETO; ALEXANDRE ANGELO DA SILVA; RONALDO DIAS DE FREITAS; MARYEL GOMES AGUIAR; THIAGO PARAGUAI DE AQUINO; ADALBERTO JOSE COSTA; ANA ROSA DE MATOS</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-10</strong></td>
+          <td><span class="badge MEDIO">MEDIO</span></td>
+          <td>Lei 12.527/2011 (LAI), Art. 8º</td>
+          <td><strong>Lacunas de publicação em endpoints do iLAI ou seções do Portal Institucional</strong><br><small style="color:#64748b">Endpoints sem registros em 2025/2026 ou seções institucionais (ex.: Licitações/Decretos/Diário) vazias.</small></td>
+          <td class="num">28</td>
+          <td class="num">R$ 0,00</td>
+          <td><small>repasse_concedido(2025); repasse_concedido(2026); obras(2025); medicoes(2025); medicoes(2026); concursos(2025); concursos(2026); divida_ativa(2025); divida_ativa(2026); contratacoes(2025); arquivos(2025); itens(2025)</small></td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Cobertura de Extração — iLAI Memory, PNCP e Portal Institucional</h2>
+    <table>
+      <thead><tr><th>Fonte</th><th>Conjunto de Dados</th><th>Exercício</th><th class="num">Registros</th><th>Status</th><th>Detalhe</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>empenhos</td>
+          <td>2025</td>
+          <td class="num">270</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Empenhos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>empenhos</td>
+          <td>2026</td>
+          <td class="num">188</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Empenhos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>liquidacoes</td>
+          <td>2025</td>
+          <td class="num">470</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Liquidações</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>liquidacoes</td>
+          <td>2026</td>
+          <td class="num">338</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Liquidações</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>pagamentos</td>
+          <td>2025</td>
+          <td class="num">542</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Pagamentos Efetuados</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>pagamentos</td>
+          <td>2026</td>
+          <td class="num">395</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Pagamentos Efetuados</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>repasse_concedido</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Despesa - Repasse Concedido</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>repasse_concedido</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Despesa - Repasse Concedido</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>diarias</td>
+          <td>2025</td>
+          <td class="num">96</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Diárias</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>diarias</td>
+          <td>2026</td>
+          <td class="num">38</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa - Diárias</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>loa_receita</td>
+          <td>2025</td>
+          <td class="num">62</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Receita - LOA Receita</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>loa_receita</td>
+          <td>2026</td>
+          <td class="num">47</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Receita - LOA Receita</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>previsao_repasse</td>
+          <td>2025</td>
+          <td class="num">24</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Receita - Previsão de Repasse</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>previsao_repasse</td>
+          <td>2026</td>
+          <td class="num">12</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Receita - Previsão de Repasse</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>receita_orc</td>
+          <td>2025</td>
+          <td class="num">3569</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Receita - Receita Orçamentária</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>receita_orc</td>
+          <td>2026</td>
+          <td class="num">2817</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Receita - Receita Orçamentária</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>folha</td>
+          <td>2025</td>
+          <td class="num">18</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Folha - Folha de Pagamento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>folha</td>
+          <td>2026</td>
+          <td class="num">19</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Folha - Folha de Pagamento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>servidores</td>
+          <td>2025</td>
+          <td class="num">37</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Folha - Remuneração Nominal / Servidores</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>servidores</td>
+          <td>2026</td>
+          <td class="num">37</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Folha - Remuneração Nominal / Servidores</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>ordem_compras</td>
+          <td>2025</td>
+          <td class="num">127</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Compras - Ordem de Compras</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>ordem_compras</td>
+          <td>2026</td>
+          <td class="num">121</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Compras - Ordem de Compras</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>ordem_fornecimento</td>
+          <td>2025</td>
+          <td class="num">115</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Compras - Ordem de Fornecimento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>ordem_fornecimento</td>
+          <td>2026</td>
+          <td class="num">102</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Compras - Ordem de Fornecimento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>contratos</td>
+          <td>2025</td>
+          <td class="num">19</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Contratos - Contratos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>contratos</td>
+          <td>2026</td>
+          <td class="num">7</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Contratos - Contratos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>licitacoes</td>
+          <td>2025</td>
+          <td class="num">10</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Licitações - Licitações</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>licitacoes</td>
+          <td>2026</td>
+          <td class="num">4</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Licitações - Licitações</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>obras</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Obras - Obras</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>obras</td>
+          <td>2026</td>
+          <td class="num">1</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Obras - Obras</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>medicoes</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Obras - Medições de Obras</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>medicoes</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Obras - Medições de Obras</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>bens</td>
+          <td>2025</td>
+          <td class="num">14</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Patrimônio - Bens Patrimoniais</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>bens</td>
+          <td>2026</td>
+          <td class="num">1</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Patrimônio - Bens Patrimoniais</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>concursos</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Concursos - Concursos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>concursos</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Concursos - Concursos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>divida_ativa</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Tributário - Dívida Ativa</small></td>
+        </tr>
+        
+        <tr>
+          <td>Câmara Sigafi</td>
+          <td>divida_ativa</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Tributário - Dívida Ativa</small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>orgao</td>
+          <td>-</td>
+          <td class="num">1</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratacoes</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>arquivos</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>itens</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratos</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>atas</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratacoes</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>arquivos</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>itens</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratos</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>atas</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>busca_indice</td>
+          <td>-</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>home_links</td>
+          <td>-</td>
+          <td class="num">72</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>publicacoes</td>
+          <td>-</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>6 categorias inspecionadas</small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>diario_oficial</td>
+          <td>-</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>noticias</td>
+          <td>-</td>
+          <td class="num">6</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+</main>
+<script>
+new Chart(document.getElementById('chartConc'), {
+  type: 'bar',
+  data: {
+    labels: ['Licitações', 'Contratos'],
+    datasets: [
+      { label: 'Conciliados', data: [0, 0], backgroundColor: '#2f855a' },
+      { label: 'Somente Memory (sem PNCP)', data: [14, 26], backgroundColor: '#c53030' }
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('chartForn'), {
+  type: 'bar',
+  data: {
+    labels: ["FOLHA DE PAGAMENTO", "MINISTERIO DA ECONOMIA", "WENDELL SENHORINHO SOARES PEREIR", "ANDERSON FERREIRA FAZENDEIRO SOC", "EXUPERIO FERREIRA PIRES", "BANCO DO BRASIL SA", "NS CONTABILIDADE LTDA", "A E T DEVELOPMENT LTDA.", "58.675.721 FLAVIO PEREIRA SOUZA", "M. C. DE ALMEIDA SOCIEDADE INDIV"],
+    datasets: [{ label: 'Valor (R$)', data: [1254406.05, 384462.99, 201278.96, 140818.64, 123343.0, 93232.76, 85474.4, 84909.0, 67915.0, 60000.0], backgroundColor: '#2b6cb0' }]
+  },
+  options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+{
+  "kpis": {
+    "exercicios": [
+      2025,
+      2026
+    ],
+    "memory_licitacoes_qtd": 14,
+    "memory_licitacoes_valor": 0.0,
+    "memory_contratos_qtd": 26,
+    "memory_contratos_valor": 506195.42,
+    "memory_dispensas_qtd": 14,
+    "memory_naf_qtd": 0,
+    "memory_naf_valor": 0.0,
+    "memory_empenhos_qtd": 458,
+    "memory_empenhos_valor": 0.0,
+    "memory_fornecedores_qtd": 75,
+    "memory_servidores_qtd": 74,
+    "pncp_contratacoes_qtd": 0,
+    "pncp_contratacoes_valor_est": 0.0,
+    "pncp_contratos_qtd": 0,
+    "pncp_arquivos_qtd": 0,
+    "conciliadas_lic_qtd": 0,
+    "sem_pncp_lic_qtd": 14,
+    "taxa_aderencia_pncp_lic_pct": 0.0,
+    "conciliados_ctr_qtd": 0,
+    "sem_pncp_ctr_qtd": 26,
+    "achados_total": 5,
+    "achados_criticos": 2,
+    "achados_altos": 2,
+    "achados_medios": 1
+  },
+  "achados": [
+    {
+      "codigo": "ACH-01",
+      "severidade": "CRITICO",
+      "base_legal": "Lei 14.133/2021, Arts. 54 e 94",
+      "titulo": "Licitações/processos no Portal Memory sem correspondência no PNCP",
+      "descricao": "Foram identificados processos no Portal da Transparência local (Memory) que não possuem publicação correspondente localizada na API do PNCP para o CNPJ do Município.",
+      "quantidade": 14,
+      "valor_envolvido": 0.0,
+      "evidencia": "1/2025; 2/2025; 3/2025; 4/2025; 5/2025; 6/2025; 7/2025; 8/2025; 9/2025; 10/2025"
+    },
+    {
+      "codigo": "ACH-03",
+      "severidade": "CRITICO",
+      "base_legal": "Lei 14.133/2021, Art. 94 (Condição de Eficácia)",
+      "titulo": "Contratos registrados no Portal Memory sem divulgação localizada no PNCP",
+      "descricao": "O Art. 94 da Lei 14.133/2021 estabelece a divulgação no PNCP como condição indispensável para eficácia do contrato e de seus aditivos.",
+      "quantidade": 26,
+      "valor_envolvido": 506195.42,
+      "evidencia": "0001/2025; 0002/2025; 0003/2025; 0004/2025; 0005/2025; 0006/2025; 0007/2025; 0008/2025; 0009/2025; 0010/2025"
+    },
+    {
+      "codigo": "ACH-05",
+      "severidade": "ALTO",
+      "base_legal": "Lei 12.527/2011, Art. 8º, §1º, IV e §3º",
+      "titulo": "Contratos no Portal Memory com fornecedor ou CPF/CNPJ ausente",
+      "descricao": "Registros de contratos publicados no portal sem identificação de contratado ou CNPJ/CPF.",
+      "quantidade": 26,
+      "valor_envolvido": 506195.42,
+      "evidencia": "0001/2025; 0002/2025; 0003/2025; 0004/2025; 0005/2025; 0006/2025; 0007/2025; 0008/2025; 0009/2025; 0010/2025"
+    },
+    {
+      "codigo": "ACH-08",
+      "severidade": "ALTO",
+      "base_legal": "Lei 14.133/2021, Art. 9º, §1º e Art. 14, IV",
+      "titulo": "Fornecedores com homonímia exata no quadro de servidores municipais",
+      "descricao": "Cruzamento nominal entre fornecedores e servidores ativos/contratados identificou coincidência exata de nome completo (CPF parcialmente mascarado pela LAI exige conferência documental).",
+      "quantidade": 12,
+      "valor_envolvido": 89931.87999999999,
+      "evidencia": "ALEXANDRE PEREIRA DA ROCHA; ARI GIL DE SOUZA NETO; ALEXANDRE ANGELO DA SILVA; RONALDO DIAS DE FREITAS; MARYEL GOMES AGUIAR; THIAGO PARAGUAI DE AQUINO; ADALBERTO JOSE COSTA; ANA ROSA DE MATOS"
+    },
+    {
+      "codigo": "ACH-10",
+      "severidade": "MEDIO",
+      "base_legal": "Lei 12.527/2011 (LAI), Art. 8º",
+      "titulo": "Lacunas de publicação em endpoints do iLAI ou seções do Portal Institucional",
+      "descricao": "Endpoints sem registros em 2025/2026 ou seções institucionais (ex.: Licitações/Decretos/Diário) vazias.",
+      "quantidade": 28,
+      "valor_envolvido": 0.0,
+      "evidencia": "repasse_concedido(2025); repasse_concedido(2026); obras(2025); medicoes(2025); medicoes(2026); concursos(2025); concursos(2026); divida_ativa(2025); divida_ativa(2026); contratacoes(2025); arquivos(2025); itens(2025)"
+    }
+  ]
+}

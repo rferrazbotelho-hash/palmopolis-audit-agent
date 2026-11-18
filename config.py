@@ -39,6 +39,12 @@ class Settings(BaseSettings):
 
     portal_url: str = "https://www.palmopolis.mg.gov.br/"
 
+    # ===== Câmara Municipal de Palmópolis/MG =====
+    camara_cnpj: str = "03689862000161"
+    camara_nome: str = "Câmara Municipal de Palmópolis/MG"
+    camara_sigafi_url: str = "https://cmpalmopolis.sigafi.com.br/portal/main"
+    camara_portal_url: str = "https://www.camarapalmopolis.mg.gov.br/"
+
     cgu_api_key: str = ""
 
     http_timeout: float = 90.0

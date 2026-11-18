@@ -37,8 +37,9 @@ PUBLICACAO_CATEGORIAS: dict[str, str] = {
 
 
 class PortalScraper:
-    def __init__(self, base_url: str | None = None) -> None:
+    def __init__(self, base_url: str | None = None, raw_source: str = "portal") -> None:
         self.base_url = (base_url or settings.portal_url).rstrip("/") + "/"
+        self.raw_source = raw_source
         self.statuses: list[ExtractionStatus] = []
 
     def _status(self, dataset: str, n: int, st: str, detalhe: str = "", raw: str = "") -> None:
@@ -89,7 +90,7 @@ class PortalScraper:
                 cat = "LGPD"
             links.append({"texto": texto, "url": href, "categoria": cat})
 
-        raw = save_raw("portal", "home_links", links, {"url": url})
+        raw = save_raw(self.raw_source, "home_links", links, {"url": url})
         self._status("home_links", len(links), "OK" if links else "VAZIO", raw=str(raw))
         log.info("[Portal] Home links: %d capturados", len(links))
         return links
@@ -124,7 +125,7 @@ class PortalScraper:
                 log.warning("[Portal] Erro em %s: %s", cat_key, exc)
                 itens.append({"categoria": cat_key, "url": rel_path, "erro": str(exc)})
 
-        raw = save_raw("portal", "publicacoes", itens, {"categorias": list(PUBLICACAO_CATEGORIAS.keys())})
+        raw = save_raw(self.raw_source, "publicacoes", itens, {"categorias": list(PUBLICACAO_CATEGORIAS.keys())})
         total_docs = sum(int(i.get("qtd_documentos", 0)) for i in itens)
         self._status("publicacoes", total_docs, "OK" if total_docs else "VAZIO",
                      detalhe=f"{len(itens)} categorias inspecionadas", raw=str(raw))
@@ -148,12 +149,12 @@ class PortalScraper:
                         "data": item.get("data"),
                         "url_pdf": urljoin(self.base_url, f"diario/arquivo/?f={pasta}{arq}") if arq else "",
                     })
-            raw = save_raw("portal", "diario_oficial", edicoes, {"endpoint": url, "raw_count": len(data) if isinstance(data, list) else 0})
+            raw = save_raw(self.raw_source, "diario_oficial", edicoes, {"endpoint": url, "raw_count": len(data) if isinstance(data, list) else 0})
             self._status("diario_oficial", len(edicoes), "OK" if edicoes else "VAZIO", raw=str(raw))
             log.info("[Portal] Diário Oficial: %d edições", len(edicoes))
         except Exception as exc:
             log.warning("[Portal] Falha ao consultar Diário Oficial: %s", exc)
-            save_raw("portal", "diario_oficial_ERRO", {"erro": str(exc)}, {"endpoint": url})
+            save_raw(self.raw_source, "diario_oficial_ERRO", {"erro": str(exc)}, {"endpoint": url})
             self._status("diario_oficial", 0, "ERRO", str(exc)[:300])
         return edicoes
 
@@ -184,7 +185,7 @@ class PortalScraper:
                 log.warning("[Portal] Erro em notícias pág %d: %s", pg, exc)
                 break
 
-        raw = save_raw("portal", "noticias", noticias, {"paginas_lidas": max_pages})
+        raw = save_raw(self.raw_source, "noticias", noticias, {"paginas_lidas": max_pages})
         self._status("noticias", len(noticias), "OK" if noticias else "VAZIO", raw=str(raw))
         log.info("[Portal] Notícias coletadas: %d", len(noticias))
         return noticias

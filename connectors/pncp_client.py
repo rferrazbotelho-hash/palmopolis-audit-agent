@@ -50,8 +50,9 @@ class _Throttle:
 
 
 class PNCPClient:
-    def __init__(self, cnpj: str | None = None) -> None:
+    def __init__(self, cnpj: str | None = None, raw_source: str = "pncp") -> None:
         self.cnpj = cnpj or settings.audit_cnpj
+        self.raw_source = raw_source
         self.base = settings.pncp_base_url.rstrip("/")
         self.page_size = settings.pncp_page_size
         self.throttle = _Throttle()
@@ -100,7 +101,7 @@ class PNCPClient:
     def orgao(self) -> dict[str, Any] | None:
         try:
             data = self._json(self._get(f"/pncp/v1/orgaos/{self.cnpj}"))
-            raw = save_raw("pncp", "orgao", data)
+            raw = save_raw(self.raw_source, "orgao", data)
             self._status("orgao", None, 1 if data else 0, "OK" if data else "VAZIO", raw=str(raw))
             return data
         except Exception as exc:
@@ -127,7 +128,7 @@ class PNCPClient:
         # Deduplicar por numeroControlePNCP
         uniq = {r.get("numeroControlePNCP") or id(r): r for r in todas}
         todas = list(uniq.values())
-        raw = save_raw("pncp", f"contratacoes_{ano}", todas,
+        raw = save_raw(self.raw_source, f"contratacoes_{ano}", todas,
                        {"endpoint": "/consulta/v1/contratacoes/publicacao", "periodo": [di, df]})
         self._status("contratacoes", ano, len(todas), "OK" if todas else "VAZIO", raw=str(raw))
         return todas
@@ -161,8 +162,8 @@ class PNCPClient:
                         pagina += 1
                 except Exception as exc:
                     log.warning("[PNCP] itens %s/%s: %s", a, s, exc)
-        r1 = save_raw("pncp", f"arquivos_{ano}", arquivos, {"endpoint": "/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/arquivos"})
-        r2 = save_raw("pncp", f"itens_{ano}", itens, {"endpoint": "/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"})
+        r1 = save_raw(self.raw_source, f"arquivos_{ano}", arquivos, {"endpoint": "/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/arquivos"})
+        r2 = save_raw(self.raw_source, f"itens_{ano}", itens, {"endpoint": "/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"})
         self._status("arquivos", ano, len(arquivos), "OK" if arquivos else "VAZIO", raw=str(r1))
         self._status("itens", ano, len(itens), "OK" if itens else "VAZIO", raw=str(r2))
         log.info("[PNCP] %s: %d arquivos, %d itens", ano, len(arquivos), len(itens))
@@ -172,7 +173,7 @@ class PNCPClient:
         di, df = self._period(ano)
         try:
             regs = self._paginate_consulta("/consulta/v1/contratos", {"dataInicial": di, "dataFinal": df, "cnpjOrgao": self.cnpj})
-            raw = save_raw("pncp", f"contratos_{ano}", regs, {"endpoint": "/consulta/v1/contratos", "periodo": [di, df]})
+            raw = save_raw(self.raw_source, f"contratos_{ano}", regs, {"endpoint": "/consulta/v1/contratos", "periodo": [di, df]})
             self._status("contratos", ano, len(regs), "OK" if regs else "VAZIO", raw=str(raw))
             log.info("[PNCP] contratos %s: %d", ano, len(regs))
             return regs
@@ -185,7 +186,7 @@ class PNCPClient:
         di, df = self._period(ano)
         try:
             regs = self._paginate_consulta("/consulta/v1/atas", {"dataInicial": di, "dataFinal": df, "cnpj": self.cnpj})
-            raw = save_raw("pncp", f"atas_{ano}", regs, {"endpoint": "/consulta/v1/atas", "periodo": [di, df]})
+            raw = save_raw(self.raw_source, f"atas_{ano}", regs, {"endpoint": "/consulta/v1/atas", "periodo": [di, df]})
             self._status("atas", ano, len(regs), "OK" if regs else "VAZIO", raw=str(raw))
             log.info("[PNCP] atas %s: %d", ano, len(regs))
             return regs
@@ -211,7 +212,7 @@ class PNCPClient:
             except Exception as exc:
                 log.warning("[PNCP] busca %s: %s", tipo, exc)
                 self._status(f"busca_{tipo}", None, 0, "ERRO", str(exc)[:300])
-        raw = save_raw("pncp", "busca_indice", out, {"endpoint": "/search/", "termo": termo})
+        raw = save_raw(self.raw_source, "busca_indice", out, {"endpoint": "/search/", "termo": termo})
         self._status("busca_indice", None, len(out), "OK" if out else "VAZIO", raw=str(raw))
         log.info("[PNCP] índice de busca: %d documentos do órgão", len(out))
         return out

@@ -1,0 +1,21 @@
+{
+  "resumo_eixos": {
+    "Concentração Estatística (Diárias)": 1
+  },
+  "total_anomalias": 1,
+  "anomalias": [
+    {
+      "codigo": "DIA-OUT-001",
+      "eixo": "Concentração Estatística (Diárias)",
+      "criticidade": "MEDIA",
+      "score_risco": 65,
+      "base_governo_ref": "Controle de Pessoal / Princípio da Economicidade",
+      "item_analisado": "1 servidores acima do limite IQR (R$ 11,662.50)",
+      "esperado": "Mediana/Limite IQR R$ 11,662.50",
+      "observado": "Maior acumulado: ALEXANDRE PEREIRA DA ROCHA (R$ 17,000.00)",
+      "variacao_pct": null,
+      "valor_exposto": 17000.0,
+      "acao_recomendada": "Conferir comprovação de deslocamentos, portarias de concessão e relatórios de viagem."
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"/>
+<title>Fiscal Corretor — Plano de Correção Passo a Passo</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f6f9; color: #1a202c; }
+  header { background: linear-gradient(135deg, #065f46, #047857); color: #fff; padding: 24px 32px; }
+  main { max-width: 1200px; margin: 22px auto; padding: 0 20px 40px; }
+  .summary { background: #ecfdf5; border-left: 5px solid #059669; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .IMEDIATA_0_5D { background: #fee2e2; color: #b91c1c; }
+  .CURTO_PRAZO_5_15D { background: #ffedd5; color: #c2410c; }
+  .ESTRUTURANTE_15_30D { background: #dbeafe; color: #1d4ed8; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+  th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; vertical-align: top; }
+  th { background: #f8fafc; color: #0f294a; }
+</style></head><body>
+<header>
+  <h1 style="margin:0 0 6px;font-size:21px;">Fiscal Corretor — Condução e Plano Passo a Passo</h1>
+  <p style="margin:0;font-size:13px;opacity:.9;">Câmara Municipal de Palmópolis/MG | CNPJ 03689862000161 | 18/11/2026 18:08</p>
+</header>
+<main>
+  <div class="summary"><strong>Plano estruturado em 5 roteiros corretivos (10 passos acionáveis), com 2 frentes de ação IMEDIATA (0 a 5 dias) focadas em estancar riscos de glosa no PNCP, estouro de dotação orçamentária e extrapolação de NAFs.</strong></div>
+  
+  <div class="card">
+    <span class="badge IMEDIATA_0_5D">IMEDIATA_0_5D</span>
+    <span style="font-size:12px;color:#64748b;margin-left:8px;">IRREGULARIDADE_GRAVE</span>
+    <h2 style="margin:8px 0 6px;font-size:17px;color:#0f294a;">AP-001 — Ausência de divulgação de contratos no PNCP (condição legal de eficácia)</h2>
+    <p style="margin:4px 0;"><strong>Causa-Raiz:</strong> Os 368 contratos constam no ERP/iLAI Memory, mas não foram transmitidos ao módulo de Contratos do PNCP (API de consulta retornou 0 contratos para 2025 e 2026).</p>
+    <p style="margin:4px 0;"><strong>Melhor Condução:</strong> Segregar imediatamente contratos regidos pela Lei 14.133/2021 dos contratos remanescentes da Lei 8.666/93 e promover o envio em lote via integração do ERP ao PNCP, suspendendo novos pagamentos de contratos da Lei 14.133/2021 até a geração do numeroControlePNCP (condição de eficácia do Art. 94).</p>
+    <p style="margin:4px 0;font-size:12.5px;color:#475569;"><strong>Fundamento:</strong> Lei 14.133/2021, Art. 94 e Art. 191; LINDB (DL 4.657/42), Art. 20 e Art. 21.</p>
+    <table>
+      <thead><tr><th>Passo</th><th>Setor</th><th>Sistema</th><th>Ação</th><th>Documentos</th><th>Validação</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>1</strong></td><td>Departamento de Licitações e Contratos</td><td>ERP Municipal / Planilha de Controle</td>
+          <td>Listar os 368 contratos e classificar cada instrumento por regime legal (Lei 14.133/21 vs Lei 8.666/93) e situação (vigente/encerrado).</td><td>Planilha de inventário contratual assinada; Cópia dos instrumentos contratuais</td><td>100% dos contratos vigentes da Lei 14.133/21 identificados.</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2</strong></td><td>TI / Fornecedor do ERP + Compras</td><td>ERP -> API PNCP</td>
+          <td>Configurar/reprocessar a rotina de integração de contratos no PNCP (incluindo envio dos PDFs assinados e CPF/CNPJ do contratado).</td><td>Log de transmissão API PNCP; Recibos com numeroControlePNCP</td><td>Consulta GET /api/consulta/v1/contratos?cnpjOrgao=66234345000118 retorna os contratos vigentes.</td>
+        </tr>
+        
+        <tr>
+          <td><strong>3</strong></td><td>Controladoria Interna + Procuradoria</td><td>Processo Administrativo</td>
+          <td>Emitir despacho saneador juntando os comprovantes de publicação tardia no PNCP e notificar o ordenador de despesas sobre contratos ainda pendentes.</td><td>Parecer de saneamento da Controladoria; Comprovantes PNCP anexados aos autos</td><td>Taxa de aderência PNCP de contratos vigentes igual a 100%.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="card">
+    <span class="badge IMEDIATA_0_5D">IMEDIATA_0_5D</span>
+    <span style="font-size:12px;color:#64748b;margin-left:8px;">IRREGULARIDADE_GRAVE</span>
+    <h2 style="margin:8px 0 6px;font-size:17px;color:#0f294a;">AP-002 — Processos licitatórios locais sem publicação no Portal Nacional de Contratações Públicas</h2>
+    <p style="margin:4px 0;"><strong>Causa-Raiz:</strong> Apenas 39 de 178 processos do Memory possuem espelhamento no PNCP (21,9%). Parte dos processos pode estar em plataforma eletrônica sem integração automática ou sob legislação anterior.</p>
+    <p style="margin:4px 0;"><strong>Melhor Condução:</strong> Conferir os 139 processos sem PNCP: publicar no PNCP todos os que sejam da Lei 14.133/21 (inclusive adesões/caronas, dispensas e inexigibilidades) e documentar o amparo da Lei 8.666/93 para os anteriores.</p>
+    <p style="margin:4px 0;font-size:12.5px;color:#475569;"><strong>Fundamento:</strong> Lei 14.133/2021, Arts. 54, 72, parágrafo único, 94 e 174.</p>
+    <table>
+      <thead><tr><th>Passo</th><th>Setor</th><th>Sistema</th><th>Ação</th><th>Documentos</th><th>Validação</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>1</strong></td><td>Setor de Licitações</td><td>Portal de Compras / Licitanet / ERP</td>
+          <td>Cruzar a lista dos 139 processos apontados (aba Cruzamento_Licitacoes) com a plataforma eletrônica utilizada.</td><td>Relação processo x plataforma x lei aplicável</td><td>Cada processo possui status definido (publicar no PNCP ou regime 8.666/93).</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2</strong></td><td>Setor de Licitações + TI</td><td>PNCP (https://pncp.gov.br)</td>
+          <td>Transmitir avisos, editais, atas e termos de homologação faltantes com inteiro teor em PDF (Art. 54).</td><td>Números de Controle PNCP gerados; Recibos de envio dos anexos</td><td>Reexecução do agente de auditoria eleva aderência PNCP para >= 95% nos processos 14.133/21.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="card">
+    <span class="badge CURTO_PRAZO_5_15D">CURTO_PRAZO_5_15D</span>
+    <span style="font-size:12px;color:#64748b;margin-left:8px;">RESSALVA_RELEVANTE</span>
+    <h2 style="margin:8px 0 6px;font-size:17px;color:#0f294a;">AP-009 — Homonímia exata entre fornecedores pagos e servidores municipais</h2>
+    <p style="margin:4px 0;"><strong>Causa-Raiz:</strong> Coincidência exata de nome completo entre 127 registros na base de fornecedores e a folha de servidores (como o iLAI mascara parte do CPF na transparência, não é possível distinguir homônimos de servidores reais sem o CPF integral).</p>
+    <p style="margin:4px 0;"><strong>Melhor Condução:</strong> Executar batimento interno de CPF completo (11 dígitos) entre a contabilidade e o RH, separando o que é pagamento de diária/suprimento de fundos/reembolso ao próprio servidor de eventual contratação comercial vedada.</p>
+    <p style="margin:4px 0;font-size:12.5px;color:#475569;"><strong>Fundamento:</strong> Lei 14.133/2021, Art. 9º, §1º e Art. 14, IV.</p>
+    <table>
+      <thead><tr><th>Passo</th><th>Setor</th><th>Sistema</th><th>Ação</th><th>Documentos</th><th>Validação</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>1</strong></td><td>Recursos Humanos + Contabilidade</td><td>Folha de Pagamento × Contabilidade</td>
+          <td>Cruzar os 127 nomes apontados na aba Fornecedores_CurvaABC por CPF completo (11 dígitos) e natureza da despesa (3.3.90.14 diárias vs fornecimento/serviços).</td><td>Relatório de batimento por CPF completo; Notas de empenho classificadas por elemento</td><td>100% dos casos classificados como diária/homônimo legítimo ou contratação vedada.</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2</strong></td><td>Controladoria + Procuradoria</td><td>Processo de Apuração</td>
+          <td>Caso confirmado fornecimento comercial por servidor impedido, rescindir contrato e instaurar sindicância administrativa.</td><td>Termo de encerramento/rescisão; Relatório conclusivo da Controladoria</td><td>Zero fornecimentos comerciais ativos com servidores impedidos.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="card">
+    <span class="badge CURTO_PRAZO_5_15D">CURTO_PRAZO_5_15D</span>
+    <span style="font-size:12px;color:#64748b;margin-left:8px;">RESSALVA_RELEVANTE</span>
+    <h2 style="margin:8px 0 6px;font-size:17px;color:#0f294a;">AP-010 — Omissão de identificação de contratados em contratos e lacunas de transparência ativa</h2>
+    <p style="margin:4px 0;"><strong>Causa-Raiz:</strong> Omissão de razão social/CNPJ nos contratos do iLAI, erro HTTP 500 em servidores/2025, seções vazias no portal institucional (Licitações, Decretos, Leis, Diário Oficial) e divergências de valores entre Memory e PNCP.</p>
+    <p style="margin:4px 0;"><strong>Melhor Condução:</strong> Abrir chamado técnico formal junto à Memory (iLAI) e à mantenedora do site institucional para liberar os campos de contratado/CNPJ nos contratos, corrigir a consulta de servidores/2025 e publicar o acervo de Diário Oficial/Decretos/Leis.</p>
+    <p style="margin:4px 0;font-size:12.5px;color:#475569;"><strong>Fundamento:</strong> Lei 12.527/2011 (LAI), Art. 8º; LC 131/2009; Lei 14.133/2021, Art. 54.</p>
+    <table>
+      <thead><tr><th>Passo</th><th>Setor</th><th>Sistema</th><th>Ação</th><th>Documentos</th><th>Validação</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>1</strong></td><td>Controladoria / Ouvidoria / TI</td><td>Chamado Técnico Memory iLAI + Site Institucional</td>
+          <td>Solicitar correção da view OData `comprascontratos` (exibir `fornecedor` e `cpf_cnpj`), correção do erro 500 em `pessoalservidores` (2025) e ativação da carga do Diário Oficial/Decretos/Leis no site.</td><td>Protocolo de chamado técnico com SLA; Checklist Atricon/Radar da Transparência</td><td>Campos de fornecedor/CNPJ preenchidos e Diário Oficial retornando edições publicadas.</td>
+        </tr>
+        
+        <tr>
+          <td><strong>2</strong></td><td>Setor de Licitações</td><td>Memory iLAI × PNCP</td>
+          <td>Reconciliar os 17 processos com divergência financeira > 20% entre Memory e PNCP.</td><td>Planilha de conciliação saneada</td><td>Diferenças justificadas ou corrigidas nas duas bases.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="card">
+    <span class="badge ESTRUTURANTE_15_30D">ESTRUTURANTE_15_30D</span>
+    <span style="font-size:12px;color:#64748b;margin-left:8px;">RECOMENDACAO_CONTROLE</span>
+    <h2 style="margin:8px 0 6px;font-size:17px;color:#0f294a;">AP-011 — Variações interanuais abruptas (2025 × 2026) e concentração atípica de diárias</h2>
+    <p style="margin:4px 0;"><strong>Causa-Raiz:</strong> Variações orçamentárias interanuais abruptas e concentração estatística de diárias por servidor.</p>
+    <p style="margin:4px 0;"><strong>Melhor Condução:</strong> Instituir revisão trimestral de metas orçamentárias e teto/prestação de contas simplificada de diárias.</p>
+    <p style="margin:4px 0;font-size:12.5px;color:#475569;"><strong>Fundamento:</strong> CF/88, Art. 37 (Eficiência/Economicidade); LRF Art. 1º, §1º.</p>
+    <table>
+      <thead><tr><th>Passo</th><th>Setor</th><th>Sistema</th><th>Ação</th><th>Documentos</th><th>Validação</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>1</strong></td><td>Planejamento / Controle Interno</td><td>Execução Orçamentária e Diárias</td>
+          <td>Solicitar justificativa às secretarias com variação > 150% e auditar os relatórios de viagem dos servidores acima do limite IQR.</td><td>Notas técnicas das secretarias; Comprovantes de viagem/diárias</td><td>Amostragem de diárias e variações orçamentárias formalmente justificadas.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+</main></body></html>

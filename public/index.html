@@ -57,17 +57,42 @@
 <header>
   <div>
     <h1 id="hdr-title">Central Interativa de Auditoria — Palmópolis/MG</h1>
-    <p id="hdr-sub">Carregando base de auditoria...</p>
+    <p id="hdr-sub">Selecione o órgão avaliado para carregar os dados separados...</p>
   </div>
-  <div class="links-top">
-    <a href="/files/dashboard_executivo_palmopolis.html" target="_blank">Dashboard Executivo</a>
-    <a href="/files/painel_analise_critica.html" target="_blank">Painel Análise Crítica</a>
-    <a href="/files/relatorio_fiscal_contas_palmopolis.html" target="_blank">Relatório Fiscal (Impressão)</a>
-    <a href="/files/plano_correcao_fiscal_corretor.html" target="_blank">Plano Corretor (Impressão)</a>
-    <a href="/files/dossie_juridico_completo.html" target="_blank">Dossiê Jurídico (TCU/TCE/MP)</a>
-    <a href="/files/auditoria_palmopolis_master.xlsx" target="_blank">Baixar Excel (.xlsx)</a>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <select id="sel-orgao-topo" onchange="selecionarOrgao(this.value)" style="background:#fff;color:#0f294a;font-weight:700;padding:7px 12px;border-radius:6px;border:none;cursor:pointer;">
+      <option value="prefeitura">Prefeitura Municipal (CNPJ 66.234.345/0001-18)</option>
+      <option value="camara">Câmara Municipal (CNPJ 03.689.862/0001-61)</option>
+    </select>
+    <div class="links-top" id="links-top">
+      <a id="lnk-dash" href="/files/dashboard_executivo_palmopolis.html" target="_blank">Dashboard Executivo</a>
+      <a id="lnk-crit" href="/files/painel_analise_critica.html" target="_blank">Painel Análise Crítica</a>
+      <a id="lnk-fisc" href="/files/relatorio_fiscal_contas_palmopolis.html" target="_blank">Relatório Fiscal (Impressão)</a>
+      <a id="lnk-corr" href="/files/plano_correcao_fiscal_corretor.html" target="_blank">Plano Corretor (Impressão)</a>
+      <a id="lnk-jur" href="/files/dossie_juridico_completo.html" target="_blank">Dossiê Jurídico (TCU/TCE/MP)</a>
+      <a id="lnk-xlsx" href="/files/auditoria_palmopolis_master.xlsx" target="_blank">Baixar Excel (.xlsx)</a>
+    </div>
   </div>
 </header>
+
+<div id="orgao-picker-overlay" style="position:fixed;inset:0;background:rgba(15,41,74,.86);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;max-width:760px;width:100%;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.35);">
+    <h2 style="margin:0 0 6px;color:#0f294a;font-size:22px;">Selecione o Órgão Público para Auditoria</h2>
+    <p style="margin:0 0 20px;color:#64748b;font-size:13.5px;">Os dados da Prefeitura Municipal (iLAI Memory) e da Câmara Municipal (Sigafi) são processados e exibidos de forma completamente separada.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
+      <button onclick="escolherOrgaoInicial('prefeitura')" style="text-align:left;padding:18px;border:2px solid #cbd5e1;border-radius:10px;background:#f8fafc;cursor:pointer;">
+        <div style="font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;">Poder Executivo</div>
+        <div style="font-size:17px;font-weight:700;color:#0f294a;margin:4px 0;">Prefeitura Municipal de Palmópolis/MG</div>
+        <div style="font-size:12.5px;color:#475569;">CNPJ: 66.234.345/0001-18<br>Portal iLAI Memory + PNCP + Site Oficial</div>
+      </button>
+      <button onclick="escolherOrgaoInicial('camara')" style="text-align:left;padding:18px;border:2px solid #cbd5e1;border-radius:10px;background:#f8fafc;cursor:pointer;">
+        <div style="font-size:11px;font-weight:700;color:#047857;text-transform:uppercase;">Poder Legislativo</div>
+        <div style="font-size:17px;font-weight:700;color:#0f294a;margin:4px 0;">Câmara Municipal de Palmópolis/MG</div>
+        <div style="font-size:12.5px;color:#475569;">CNPJ: 03.689.862/0001-61<br>Portal Sigafi (19 endpoints) + PNCP + Site Oficial</div>
+      </button>
+    </div>
+  </div>
+</div>
 
 <nav>
   <button class="active" data-tab="visao">Visão Executiva</button>
@@ -315,6 +340,9 @@
 <script>
 const brl = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 let DATA = null;
+let ORGAO_ATUAL = 'prefeitura';
+let CH_CONC = null;
+let CH_FORN = null;
 
 document.querySelectorAll('nav button').forEach(btn => {
   btn.onclick = () => {
@@ -324,10 +352,33 @@ document.querySelectorAll('nav button').forEach(btn => {
   };
 });
 
-async function init() {
-  let r = await fetch('/api/bundle').catch(() => null);
+window.escolherOrgaoInicial = function(orgao) {
+  document.getElementById('orgao-picker-overlay').style.display = 'none';
+  selecionarOrgao(orgao);
+};
+
+window.selecionarOrgao = async function(orgao) {
+  ORGAO_ATUAL = orgao === 'camara' ? 'camara' : 'prefeitura';
+  document.getElementById('sel-orgao-topo').value = ORGAO_ATUAL;
+  await init(ORGAO_ATUAL);
+};
+
+async function init(orgao = 'prefeitura') {
+  let r = await fetch(`/api/bundle?orgao=${orgao}`).catch(() => null);
+  if (!r || !r.ok) r = await fetch(`./data/bundle_${orgao}.json`).catch(() => null);
   if (!r || !r.ok) r = await fetch('./data/bundle.json');
   DATA = await r.json();
+  const pref = DATA.files_prefix || '/files';
+  document.getElementById('lnk-dash').href = `${pref}/dashboard_executivo_palmopolis.html`;
+  document.getElementById('lnk-crit').href = `${pref}/painel_analise_critica.html`;
+  document.getElementById('lnk-fisc').href = `${pref}/relatorio_fiscal_contas_palmopolis.html`;
+  document.getElementById('lnk-corr').href = `${pref}/plano_correcao_fiscal_corretor.html`;
+  document.getElementById('lnk-jur').href = `${pref}/dossie_juridico_completo.html`;
+  document.getElementById('lnk-xlsx').href = `${pref}/${DATA.excel_name || 'auditoria_palmopolis_master.xlsx'}`;
+  const lnkPesq = document.querySelector('#tab-pesquisador a[href*="contratos_fornecedor"]');
+  if (lnkPesq) lnkPesq.href = `${pref}/contratos_fornecedor_e_recebimentos.xlsx`;
+  const lnkDia = document.querySelector('#tab-diarias a[href*="pagamento_diarias"]');
+  if (lnkDia) lnkDia.href = `${pref}/pagamento_diarias_completo.xlsx`;
   const k = DATA.resumo.kpis || {};
   document.getElementById('hdr-title').textContent = `Central Interativa de Auditoria — ${DATA.entidade}`;
   document.getElementById('hdr-sub').textContent = `CNPJ ${DATA.cnpj} | Exercícios: ${(k.exercicios||[]).join(', ')} | Apontamentos Fiscais: ${(DATA.fiscal.apontamentos||[]).length} | Inconsistências Críticas: ${(DATA.critica.anomalias||[]).length}`;
@@ -348,20 +399,22 @@ async function init() {
     `<tr><td><strong>${a.codigo}</strong></td><td><span class="badge ${a.severidade}">${a.severidade}</span></td><td>${a.base_legal}</td><td><strong>${a.titulo}</strong><br><small style="color:#64748b">${a.descricao}</small></td><td class="num">${a.quantidade}</td><td class="num">${brl(a.valor_envolvido)}</td></tr>`
   ).join('');
 
-  new Chart(document.getElementById('ch-conc'), {
+  if (CH_CONC) CH_CONC.destroy();
+  CH_CONC = new Chart(document.getElementById('ch-conc'), {
     type: 'bar',
     data: {
       labels: ['Licitações', 'Contratos'],
       datasets: [
         { label: 'Conciliados', data: [k.conciliadas_lic_qtd||0, k.conciliados_ctr_qtd||0], backgroundColor: '#15803d' },
-        { label: 'Somente Memory (sem PNCP)', data: [k.sem_pncp_lic_qtd||0, k.sem_pncp_ctr_qtd||0], backgroundColor: '#b91c1c' }
+        { label: 'Somente Local (sem PNCP)', data: [k.sem_pncp_lic_qtd||0, k.sem_pncp_ctr_qtd||0], backgroundColor: '#b91c1c' }
       ]
     },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
   });
 
   const abc = (DATA.tables.Fornecedores_CurvaABC || []).filter(x => !x.eh_proprio_municipio).slice(0, 10);
-  new Chart(document.getElementById('ch-forn'), {
+  if (CH_FORN) CH_FORN.destroy();
+  CH_FORN = new Chart(document.getElementById('ch-forn'), {
     type: 'bar',
     data: {
       labels: abc.map(x => String(x.fornecedor_nome||'').slice(0, 28)),
@@ -394,7 +447,7 @@ async function init() {
 
   // Crítica
   const eixos = Object.keys(DATA.critica.resumo_eixos || {});
-  document.getElementById('flt-eixo').innerHTML += eixos.map(e => `<option value="${e}">${e}</option>`).join('');
+  document.getElementById('flt-eixo').innerHTML = '<option value="">Todos os eixos</option>' + eixos.map(e => `<option value="${e}">${e}</option>`).join('');
   renderCritica();
   ['flt-eixo', 'flt-crit'].forEach(id => document.getElementById(id).onchange = renderCritica);
   document.getElementById('flt-crit-txt').oninput = renderCritica;
@@ -419,9 +472,11 @@ let FORN_SEL = '';
 let ORDEM_ASC = true;
 
 async function initPesquisador() {
-  let r = await fetch('/files/fornecedor_contratos_recebimentos.json').catch(() => null);
-  if (!r || !r.ok) r = await fetch('./files/fornecedor_contratos_recebimentos.json').catch(() => null);
+  const pref = (DATA && DATA.files_prefix) || '/files';
+  let r = await fetch(`${pref}/fornecedor_contratos_recebimentos.json`).catch(() => null);
+  if (!r || !r.ok) r = await fetch(`.${pref}/fornecedor_contratos_recebimentos.json`).catch(() => null);
   if (!r || !r.ok) return;
+  FORN_SEL = '';
   PESQ = await r.json();
   document.getElementById('flt-forn-list').oninput = renderFornecedoresLista;
   document.getElementById('flt-rec-txt').oninput = renderRecebimentosCron;
@@ -636,12 +691,14 @@ let DIA_SRV_SEL = '';
 let DIA_ASC = true;
 
 async function initDiarias() {
-  let r = await fetch('/files/pagamento_diarias.json').catch(() => null);
-  if (!r || !r.ok) r = await fetch('./files/pagamento_diarias.json').catch(() => null);
+  const pref = (DATA && DATA.files_prefix) || '/files';
+  let r = await fetch(`${pref}/pagamento_diarias.json`).catch(() => null);
+  if (!r || !r.ok) r = await fetch(`.${pref}/pagamento_diarias.json`).catch(() => null);
   if (!r || !r.ok) return;
+  DIA_SRV_SEL = '';
   DIA = await r.json();
   const unids = [...new Set((DIA.pagamentos_diarias || []).map(x => x.unidade_orcamentaria).filter(Boolean))].sort();
-  document.getElementById('flt-dia-unid').innerHTML += unids.map(u => `<option value="${u}">${u}</option>`).join('');
+  document.getElementById('flt-dia-unid').innerHTML = '<option value="">Todas as unidades</option>' + unids.map(u => `<option value="${u}">${u}</option>`).join('');
   document.getElementById('flt-dia-nome-cpf').oninput = () => { renderDiaServidores(); renderDiaPagamentos(); };
   document.getElementById('flt-dia-unid').onchange = () => { renderDiaServidores(); renderDiaPagamentos(); };
   document.getElementById('btn-limpar-dia').onclick = () => {
