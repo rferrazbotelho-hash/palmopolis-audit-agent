@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Central de Auditoria — Palmópolis/MG</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f1f5f9; --card: #ffffff; --navy: #0f294a; --accent: #1d4ed8;
+      --crit: #b91c1c; --alto: #c2410c; --med: #a16207; --ok: #15803d;
+      --border: #e2e8f0; --text: #0f172a; --muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: linear-gradient(135deg, #0f294a, #1e3a8a); color: #fff; padding: 18px 28px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+    header h1 { margin: 0; font-size: 20px; }
+    header p { margin: 4px 0 0; font-size: 12px; opacity: 0.88; }
+    .links-top a { color: #e2e8f0; text-decoration: none; font-size: 12px; border: 1px solid rgba(255,255,255,.3); padding: 6px 10px; border-radius: 6px; margin-left: 6px; }
+    .links-top a:hover { background: rgba(255,255,255,.15); color: #fff; }
+    nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0 28px; display: flex; gap: 6px; overflow-x: auto; }
+    nav button { background: none; border: none; padding: 13px 16px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+    nav button.active { color: var(--navy); border-bottom-color: var(--accent); }
+    main { max-width: 1420px; margin: 20px auto; padding: 0 20px 40px; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
+    .kpi .lbl { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .4px; }
+    .kpi .val { font-size: 23px; font-weight: 700; color: var(--navy); margin: 6px 0 2px; }
+    .kpi .sub { font-size: 12px; color: var(--muted); }
+    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+    .card h2 { margin: 0 0 12px; font-size: 16px; color: var(--navy); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: center; }
+    input, select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; }
+    input[type="search"] { min-width: 260px; flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: #f8fafc; color: var(--navy); position: sticky; top: 0; }
+    .tbl-wrap { max-height: 580px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .IRREGULARIDADE_GRAVE, .CRITICA, .CRITICO { background: #fee2e2; color: var(--crit); }
+    .RESSALVA_RELEVANTE, .ALTA, .ALTO { background: #ffedd5; color: var(--alto); }
+    .RECOMENDACAO_CONTROLE, .MEDIA, .MEDIO { background: #fef9c3; color: var(--med); }
+    .OK, .CONCILIADO { background: #dcfce7; color: var(--ok); }
+    .SOMENTE_LOCAL_SEM_PNCP { background: #fee2e2; color: var(--crit); }
+    .SOMENTE_PNCP_SEM_LOCAL { background: #ffedd5; color: var(--alto); }
+    .ap-card { background: #fff; border: 1px solid var(--border); border-left: 5px solid var(--navy); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+    .ap-card.IRREGULARIDADE_GRAVE { border-left-color: var(--crit); }
+    .ap-card.RESSALVA_RELEVANTE { border-left-color: var(--alto); }
+    .parecer { background: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid var(--crit); padding: 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13.5px; }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="hdr-title">Central Interativa de Auditoria — Palmópolis/MG</h1>
+    <p id="hdr-sub">Carregando base de auditoria...</p>
+  </div>
+  <div class="links-top">
+    <a href="/files/dashboard_executivo_palmopolis.html" target="_blank">Dashboard Executivo</a>
+    <a href="/files/painel_analise_critica.html" target="_blank">Painel Análise Crítica</a>
+    <a href="/files/relatorio_fiscal_contas_palmopolis.html" target="_blank">Relatório Fiscal (Impressão)</a>
+    <a href="/files/auditoria_palmopolis_master.xlsx" target="_blank">Baixar Excel (.xlsx)</a>
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="visao">Visão Executiva</button>
+  <button data-tab="fiscal">Fiscal de Contas Públicas</button>
+  <button data-tab="critica">Análise Crítica (Variações)</button>
+  <button data-tab="tabelas">Explorador de Bases</button>
+  <button data-tab="cobertura">Cobertura &amp; Endpoints</button>
+</nav>
+
+<main>
+  <!-- ABA 1: VISÃO EXECUTIVA -->
+  <section id="tab-visao" class="tab active">
+    <div id="kpi-grid" class="kpi-grid"></div>
+    <div class="charts">
+      <div class="card"><h2>Conciliação Memory × PNCP</h2><canvas id="ch-conc" height="175"></canvas></div>
+      <div class="card"><h2>Top 10 Fornecedores (R$)</h2><canvas id="ch-forn" height="175"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Achados Legais (Lei 14.133/2021 e LAI)</h2>
+      <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Severidade</th><th>Base Legal</th><th>Título</th><th class="num">Qtd</th><th class="num">Valor Envolvido</th></tr></thead><tbody id="tb-achados"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ABA 2: FISCAL DE CONTAS -->
+  <section id="tab-fiscal" class="tab">
+    <div id="parecer-box" class="parecer"></div>
+    <div class="toolbar">
+      <select id="flt-grav">
+        <option value="">Todas as gravidades</option>
+        <option value="IRREGULARIDADE_GRAVE">Irregularidade Grave</option>
+        <option value="RESSALVA_RELEVANTE">Ressalva Relevante</option>
+        <option value="RECOMENDACAO_CONTROLE">Recomendação de Controle</option>
+      </select>
+      <input type="search" id="flt-fiscal-txt" placeholder="Filtrar apontamentos por título, lei ou evidência..." />
+    </div>
+    <div id="fiscal-list"></div>
+  </section>
+
+  <!-- ABA 3: ANÁLISE CRÍTICA -->
+  <section id="tab-critica" class="tab">
+    <div class="toolbar">
+      <select id="flt-eixo"><option value="">Todos os eixos</option></select>
+      <select id="flt-crit">
+        <option value="">Todas as criticidades</option>
+        <option value="CRITICA">Crítica</option>
+        <option value="ALTA">Alta</option>
+        <option value="MEDIA">Média</option>
+      </select>
+      <input type="search" id="flt-crit-txt" placeholder="Buscar processo, contrato, unidade ou ação..." />
+    </div>
+    <div class="card">
+      <h2>Ranking de Variações Inconsistentes (<span id="crit-count">0</span>)</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Score</th><th>Crit.</th><th>Eixo</th><th>Item Analisado</th><th>Esperado</th><th>Observado</th><th class="num">Var %</th><th class="num">Valor Exposto</th></tr></thead>
+          <tbody id="tb-critica"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 4: EXPLORADOR DE BASES -->
+  <section id="tab-tabelas" class="tab">
+    <div class="toolbar">
+      <select id="sel-tabela">
+        <option value="Cruzamento_Licitacoes">Cruzamento Licitações (Memory × PNCP)</option>
+        <option value="Cruzamento_Contratos">Cruzamento Contratos (Memory × PNCP)</option>
+        <option value="Auditoria_Art75_Dispensas">Auditoria Art. 75 (Dispensas)</option>
+        <option value="Fornecedores_CurvaABC">Fornecedores Curva ABC</option>
+        <option value="Critica_Var_Valores">Variações de Valores (Licitações)</option>
+        <option value="Critica_Contratos_NAF">Contratos extrapolados por NAF (&gt;25%)</option>
+        <option value="Critica_Orcamentaria">Inconsistências Orçamentárias (Lei 4.320)</option>
+      </select>
+      <input type="search" id="flt-tbl-txt" placeholder="Pesquisar em qualquer coluna..." />
+      <span id="tbl-info" style="font-size:12px;color:#64748b"></span>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap" id="tbl-dyn-wrap"></div>
+    </div>
+  </section>
+
+  <!-- ABA 5: COBERTURA -->
+  <section id="tab-cobertura" class="tab">
+    <div class="card">
+      <h2>Cobertura de Extração (Memory iLAI, PNCP e Portal Institucional)</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Fonte</th><th>Dataset</th><th>Exercício</th><th class="num">Registros</th><th>Status</th><th>Detalhe</th></tr></thead>
+          <tbody id="tb-status"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const brl = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+let DATA = null;
+
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('nav button, .tab').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  };
+});
+
+async function init() {
+  let r = await fetch('/api/bundle').catch(() => null);
+  if (!r || !r.ok) r = await fetch('./data/bundle.json');
+  DATA = await r.json();
+  const k = DATA.resumo.kpis || {};
+  document.getElementById('hdr-title').textContent = `Central Interativa de Auditoria — ${DATA.entidade}`;
+  document.getElementById('hdr-sub').textContent = `CNPJ ${DATA.cnpj} | Exercícios: ${(k.exercicios||[]).join(', ')} | Apontamentos Fiscais: ${(DATA.fiscal.apontamentos||[]).length} | Inconsistências Críticas: ${(DATA.critica.anomalias||[]).length}`;
+
+  const kpis = [
+    ['Licitações (Memory)', k.memory_licitacoes_qtd, brl(k.memory_licitacoes_valor)],
+    ['Contratos (Memory)', k.memory_contratos_qtd, brl(k.memory_contratos_valor)],
+    ['Contratações PNCP', k.pncp_contratacoes_qtd, `${k.pncp_arquivos_qtd || 0} arquivos | ${k.pncp_contratos_qtd || 0} contratos`],
+    ['Aderência PNCP', (k.taxa_aderencia_pncp_lic_pct || 0) + '%', `${k.conciliadas_lic_qtd || 0} conciliadas / ${k.sem_pncp_lic_qtd || 0} sem PNCP`],
+    ['Apontamentos Fiscais', DATA.fiscal.total_apontamentos || 0, `Graves: ${DATA.fiscal.graves || 0} | Ressalvas: ${DATA.fiscal.ressalvas || 0}`],
+    ['Variações Críticas', (DATA.critica.anomalias || []).length, 'Avaliação prioritária em bases gov.'],
+  ];
+  document.getElementById('kpi-grid').innerHTML = kpis.map(([l,v,s]) =>
+    `<div class="kpi"><div class="lbl">${l}</div><div class="val">${v ?? 0}</div><div class="sub">${s}</div></div>`
+  ).join('');
+
+  document.getElementById('tb-achados').innerHTML = (DATA.resumo.achados || []).map(a =>
+    `<tr><td><strong>${a.codigo}</strong></td><td><span class="badge ${a.severidade}">${a.severidade}</span></td><td>${a.base_legal}</td><td><strong>${a.titulo}</strong><br><small style="color:#64748b">${a.descricao}</small></td><td class="num">${a.quantidade}</td><td class="num">${brl(a.valor_envolvido)}</td></tr>`
+  ).join('');
+
+  new Chart(document.getElementById('ch-conc'), {
+    type: 'bar',
+    data: {
+      labels: ['Licitações', 'Contratos'],
+      datasets: [
+        { label: 'Conciliados', data: [k.conciliadas_lic_qtd||0, k.conciliados_ctr_qtd||0], backgroundColor: '#15803d' },
+        { label: 'Somente Memory (sem PNCP)', data: [k.sem_pncp_lic_qtd||0, k.sem_pncp_ctr_qtd||0], backgroundColor: '#b91c1c' }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  const abc = (DATA.tables.Fornecedores_CurvaABC || []).filter(x => !x.eh_proprio_municipio).slice(0, 10);
+  new Chart(document.getElementById('ch-forn'), {
+    type: 'bar',
+    data: {
+      labels: abc.map(x => String(x.fornecedor_nome||'').slice(0, 28)),
+      datasets: [{ label: 'Valor (R$)', data: abc.map(x => Number(x.valor_ref||0)), backgroundColor: '#1d4ed8' }]
+    },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // Fiscal
+  document.getElementById('parecer-box').textContent = DATA.fiscal.parecer_sintese || '';
+  renderFiscal();
+  document.getElementById('flt-grav').onchange = renderFiscal;
+  document.getElementById('flt-fiscal-txt').oninput = renderFiscal;
+
+  // Crítica
+  const eixos = Object.keys(DATA.critica.resumo_eixos || {});
+  document.getElementById('flt-eixo').innerHTML += eixos.map(e => `<option value="${e}">${e}</option>`).join('');
+  renderCritica();
+  ['flt-eixo', 'flt-crit'].forEach(id => document.getElementById(id).onchange = renderCritica);
+  document.getElementById('flt-crit-txt').oninput = renderCritica;
+
+  // Tabelas
+  renderTable();
+  document.getElementById('sel-tabela').onchange = renderTable;
+  document.getElementById('flt-tbl-txt').oninput = renderTable;
+
+  // Cobertura
+  document.getElementById('tb-status').innerHTML = (DATA.statuses || []).map(s =>
+    `<tr><td>${s.fonte}</td><td>${s.dataset}</td><td>${s.exercicio || '-'}</td><td class="num">${s.registros}</td><td><span class="badge ${s.status}">${s.status}</span></td><td><small>${s.detalhe||''}</small></td></tr>`
+  ).join('');
+}
+
+function renderFiscal() {
+  const g = document.getElementById('flt-grav').value;
+  const q = document.getElementById('flt-fiscal-txt').value.toLowerCase();
+  const list = (DATA.fiscal.apontamentos || []).filter(ap =>
+    (!g || ap.gravidade === g) &&
+    (!q || JSON.stringify(ap).toLowerCase().includes(q))
+  );
+  document.getElementById('fiscal-list').innerHTML = list.map(ap => `
+    <div class="ap-card ${ap.gravidade}">
+      <span class="badge ${ap.gravidade}">${ap.gravidade}</span>
+      <span style="font-size:12px;color:#64748b;margin-left:8px">${ap.categoria} | Prazo: ${ap.prazo_sugerido_dias}d | Ocorrências: ${ap.quantidade_ocorrencias} | ${brl(ap.valor_envolvido)}</span>
+      <h3 style="margin:8px 0 4px;color:#0f294a">${ap.codigo} — ${ap.titulo}</h3>
+      <p style="margin:4px 0;font-size:13px"><strong>Base Legal:</strong> ${ap.base_legal}</p>
+      <p style="margin:4px 0;font-size:13px"><strong>Situação:</strong> ${ap.situacao_encontrada}</p>
+      <p style="margin:4px 0;font-size:13px"><strong>Risco:</strong> ${ap.risco_procedimental}</p>
+      <p style="margin:6px 0 2px;font-size:12.5px"><strong>Evidências:</strong> ${(ap.evidencias_principais||[]).join(' • ')}</p>
+      <p style="margin:6px 0 0;background:#f8fafc;padding:8px;border-left:3px solid #1d4ed8;font-size:13px"><strong>Determinação:</strong> ${ap.determinacao_ao_gestor}</p>
+    </div>
+  `).join('');
+}
+
+function renderCritica() {
+  const eixo = document.getElementById('flt-eixo').value;
+  const crit = document.getElementById('flt-crit').value;
+  const q = document.getElementById('flt-crit-txt').value.toLowerCase();
+  const list = (DATA.critica.anomalias || []).filter(a =>
+    (!eixo || a.eixo === eixo) && (!crit || a.criticidade === crit) && (!q || JSON.stringify(a).toLowerCase().includes(q))
+  );
+  document.getElementById('crit-count').textContent = list.length;
+  document.getElementById('tb-critica').innerHTML = list.map(a =>
+    `<tr><td class="num"><strong>${a.score_risco}</strong></td><td><span class="badge ${a.criticidade}">${a.criticidade}</span></td><td>${a.eixo}<br><small style="color:#64748b">${a.base_governo_ref}</small></td><td>${a.item_analisado}</td><td>${a.esperado}</td><td>${a.observado}</td><td class="num">${a.variacao_pct != null ? a.variacao_pct.toFixed(1)+'%' : '-'}</td><td class="num">${brl(a.valor_exposto)}</td></tr>`
+  ).join('');
+}
+
+function renderTable() {
+  const name = document.getElementById('sel-tabela').value;
+  const q = document.getElementById('flt-tbl-txt').value.toLowerCase();
+  const rows = (DATA.tables[name] || []).filter(r => !q || JSON.stringify(r).toLowerCase().includes(q));
+  document.getElementById('tbl-info').textContent = `${rows.length} registros exibidos`;
+  if (!rows.length) {
+    document.getElementById('tbl-dyn-wrap').innerHTML = '<p style="padding:16px;color:#64748b">Sem registros para este filtro.</p>';
+    return;
+  }
+  const cols = Object.keys(rows[0]).slice(0, 12);
+  const head = `<tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr>`;
+  const body = rows.slice(0, 250).map(r => `<tr>${cols.map(c => {
+    const v = r[c];
+    if (c === 'status_conciliacao') return `<td><span class="badge ${v}">${v}</span></td>`;
+    return `<td>${v === null || v === undefined ? '' : String(v).slice(0, 140)}</td>`;
+  }).join('')}</tr>`).join('');
+  document.getElementById('tbl-dyn-wrap').innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoria Municipal — Prefeitura Municipal de Palmópolis/MG</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f9; --card: #ffffff; --navy: #1b365d; --accent: #2b6cb0;
+      --crit: #c53030; --alto: #dd6b20; --med: #b7791f; --ok: #2f855a;
+      --border: #e2e8f0; --text: #1a202c; --muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: linear-gradient(135deg, #1b365d, #2b4c7e); color: #fff; padding: 24px 32px; }
+    header h1 { margin: 0 0 6px 0; font-size: 22px; }
+    header p { margin: 0; opacity: 0.9; font-size: 13px; }
+    main { max-width: 1360px; margin: 24px auto; padding: 0 20px 40px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .kpi .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .kpi .val { font-size: 24px; font-weight: 700; color: var(--navy); margin: 6px 0 2px; }
+    .kpi .sub { font-size: 12px; color: var(--muted); }
+    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .card h2 { margin: 0 0 14px; font-size: 16px; color: var(--navy); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: #f8fafc; color: var(--navy); font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .CRITICO { background: #fde2e1; color: var(--crit); }
+    .ALTO { background: #fef0d9; color: var(--alto); }
+    .MEDIO { background: #fff9db; color: var(--med); }
+    .INFO, .OK { background: #e6fffa; color: var(--ok); }
+    .VAZIO, .DEFICIT_TRANSPARENCIA { background: #fff9db; color: var(--med); }
+    .ERRO { background: #fde2e1; color: var(--crit); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Painel Executivo de Auditoria Municipal — Prefeitura Municipal de Palmópolis/MG</h1>
+  <p>CNPJ 66234345000118 | Exercícios: 2025, 2026 | Referencial: Lei 14.133/2021 (Arts. 9º, 14, 54, 75 e 94) e LAI (Lei 12.527/2011) | Gerado em 17/11/2026 22:27</p>
+</header>
+<main>
+  <section class="kpi-grid">
+    <div class="kpi"><div class="label">Licitações (Memory)</div><div class="val">178</div><div class="sub">Homologado: R$ 136.864.786,55</div></div>
+    <div class="kpi"><div class="label">Contratos (Memory)</div><div class="val">368</div><div class="sub">Total: R$ 74.212.800,87</div></div>
+    <div class="kpi"><div class="label">Contratações no PNCP</div><div class="val">40</div><div class="sub">Contratos PNCP: 0 | Arquivos: 119</div></div>
+    <div class="kpi"><div class="label">Aderência PNCP (Licitações)</div><div class="val">21.9%</div><div class="sub">39 conciliadas | 139 sem PNCP</div></div>
+    <div class="kpi"><div class="label">NAFs Emitidas (Memory)</div><div class="val">1960</div><div class="sub">Volume: R$ 75.462.098,32</div></div>
+    <div class="kpi"><div class="label">Achados de Auditoria</div><div class="val">8</div><div class="sub">Críticos: 3 | Altos: 3 | Médios: 2</div></div>
+  </section>
+
+  <section class="charts">
+    <div class="card">
+      <h2>Conciliação Local (Memory) x PNCP</h2>
+      <canvas id="chartConc" height="190"></canvas>
+    </div>
+    <div class="card">
+      <h2>Top 10 Fornecedores por Valor Empenhado (R$)</h2>
+      <canvas id="chartForn" height="190"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Matriz de Achados — Lei nº 14.133/2021 e Lei nº 12.527/2011</h2>
+    <table>
+      <thead><tr><th>Código</th><th>Severidade</th><th>Base Legal</th><th>Achado</th><th class="num">Qtd</th><th class="num">Valor Envolvido</th><th>Evidência / Amostra</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td><strong>ACH-01</strong></td>
+          <td><span class="badge CRITICO">CRITICO</span></td>
+          <td>Lei 14.133/2021, Arts. 54 e 94</td>
+          <td><strong>Licitações/processos no Portal Memory sem correspondência no PNCP</strong><br><small style="color:#64748b">Foram identificados processos no Portal da Transparência local (Memory) que não possuem publicação correspondente localizada na API do PNCP para o CNPJ do Município.</small></td>
+          <td class="num">139</td>
+          <td class="num">R$ 50.395.816,18</td>
+          <td><small>104/2025; 103/2025; 102/2025; 101/2025; 100/2025; 99/2025; 97/2025; 96/2025; 95/2025; 91/2025</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-02</strong></td>
+          <td><span class="badge ALTO">ALTO</span></td>
+          <td>Lei 12.527/2011 (LAI), Art. 8º, §1º, IV</td>
+          <td><strong>Contratações publicadas no PNCP sem espelhamento localizado no Portal Memory</strong><br><small style="color:#64748b">Processos publicados no PNCP sem correspondência direta nos registros do Portal Memory.</small></td>
+          <td class="num">1</td>
+          <td class="num">R$ 3.370.500,00</td>
+          <td><small>66234345000118-1-000006/2026</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-03</strong></td>
+          <td><span class="badge CRITICO">CRITICO</span></td>
+          <td>Lei 14.133/2021, Art. 94 (Condição de Eficácia)</td>
+          <td><strong>Contratos registrados no Portal Memory sem divulgação localizada no PNCP</strong><br><small style="color:#64748b">O Art. 94 da Lei 14.133/2021 estabelece a divulgação no PNCP como condição indispensável para eficácia do contrato e de seus aditivos.</small></td>
+          <td class="num">368</td>
+          <td class="num">R$ 74.212.800,87</td>
+          <td><small>128/2025; 127/2025; 126/2025; 124/2025; 123/2025; 122/2025; 119/2025; 118/2025; 117/2025; 116/2025</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-05</strong></td>
+          <td><span class="badge ALTO">ALTO</span></td>
+          <td>Lei 12.527/2011, Art. 8º, §1º, IV e §3º</td>
+          <td><strong>Contratos no Portal Memory com fornecedor ou CPF/CNPJ ausente</strong><br><small style="color:#64748b">Registros de contratos publicados no portal sem identificação de contratado ou CNPJ/CPF.</small></td>
+          <td class="num">368</td>
+          <td class="num">R$ 74.212.800,87</td>
+          <td><small>128/2025; 127/2025; 126/2025; 124/2025; 123/2025; 122/2025; 119/2025; 118/2025; 117/2025; 116/2025</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-06</strong></td>
+          <td><span class="badge CRITICO">CRITICO</span></td>
+          <td>Lei 14.133/2021, Art. 75, I, II e §1º</td>
+          <td><strong>Dispensas por valor ou acumulados anuais acima do limite legal</strong><br><small style="color:#64748b">Processos ou acumulados por fornecedor em compra direta superam o teto atualizado do Art. 75.</small></td>
+          <td class="num">16</td>
+          <td class="num">R$ 6.144.650,85</td>
+          <td><small>101/2025; 86/2025; 81/2025; 72/2025; 67/2025; 30/2025; 23/2025; 12/2025; 5/2025; 72/2026</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-07</strong></td>
+          <td><span class="badge MEDIO">MEDIO</span></td>
+          <td>Lei 14.133/2021, Art. 54, caput</td>
+          <td><strong>Contratações no PNCP sem inteiro teor de edital/anexos publicados</strong><br><small style="color:#64748b">Art. 54 exige divulgação e manutenção do inteiro teor do ato convocatório e anexos no PNCP.</small></td>
+          <td class="num">1</td>
+          <td class="num">R$ 543.213,28</td>
+          <td><small>66234345000118-1-000013/2025</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-08</strong></td>
+          <td><span class="badge ALTO">ALTO</span></td>
+          <td>Lei 14.133/2021, Art. 9º, §1º e Art. 14, IV</td>
+          <td><strong>Fornecedores com homonímia exata no quadro de servidores municipais</strong><br><small style="color:#64748b">Cruzamento nominal entre fornecedores e servidores ativos/contratados identificou coincidência exata de nome completo (CPF parcialmente mascarado pela LAI exige conferência documental).</small></td>
+          <td class="num">127</td>
+          <td class="num">R$ 393.485,93</td>
+          <td><small>MARCELO ALVES TEIXEIRA; JOSE CARLOS COSTA REAL; JURANDIR ALVES DOS SANTOS; LAERCIO GOMES DO AMARAL; LAECIO SOUTO GONCALVES; JULIO CESAR GOMES DA SILVA; ITAMAR VIEIRA DE ARAUJO; PAULO CARLOS FERREIRA</small></td>
+        </tr>
+        
+        <tr>
+          <td><strong>ACH-10</strong></td>
+          <td><span class="badge MEDIO">MEDIO</span></td>
+          <td>Lei 12.527/2011 (LAI), Art. 8º</td>
+          <td><strong>Lacunas de publicação em endpoints do iLAI ou seções do Portal Institucional</strong><br><small style="color:#64748b">Endpoints sem registros em 2025/2026 ou seções institucionais (ex.: Licitações/Decretos/Diário) vazias.</small></td>
+          <td class="num">20</td>
+          <td class="num">R$ 0,00</td>
+          <td><small>fiscais_contrato(2025); pagamentos(2025); despesa_extra(2025); fornecedores(2025); restos_pagar(2025); diarias(2025); terceirizados(2025); terceirizados(2026); contratos(2025); atas(2025); contratos(2026); atas(2026)</small></td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Cobertura de Extração — iLAI Memory, PNCP e Portal Institucional</h2>
+    <table>
+      <thead><tr><th>Fonte</th><th>Conjunto de Dados</th><th>Exercício</th><th class="num">Registros</th><th>Status</th><th>Detalhe</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>editais</td>
+          <td>2025</td>
+          <td class="num">42</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Editais</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>editais</td>
+          <td>2026</td>
+          <td class="num">69</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Editais</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>licitacoes</td>
+          <td>2025</td>
+          <td class="num">93</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Licitações</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>licitacoes</td>
+          <td>2026</td>
+          <td class="num">85</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Licitações</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>dispensas_valor</td>
+          <td>2025</td>
+          <td class="num">4</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Dispensa por Valor / Compras Diretas</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>dispensas_valor</td>
+          <td>2026</td>
+          <td class="num">70</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Dispensa por Valor / Compras Diretas</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>contratos</td>
+          <td>2025</td>
+          <td class="num">116</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Contratos e Aditivos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>contratos</td>
+          <td>2026</td>
+          <td class="num">252</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Contratos e Aditivos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>naf</td>
+          <td>2025</td>
+          <td class="num">500</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Notas de Autorização de Fornecimento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>naf</td>
+          <td>2026</td>
+          <td class="num">1460</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Notas de Autorização de Fornecimento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>fiscais_contrato</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Fiscais de Contrato</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>fiscais_contrato</td>
+          <td>2026</td>
+          <td class="num">203</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Fiscais de Contrato</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>empenhos</td>
+          <td>2025</td>
+          <td class="num">186</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Empenho</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>empenhos</td>
+          <td>2026</td>
+          <td class="num">5247</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Empenho</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>liquidacoes</td>
+          <td>2025</td>
+          <td class="num">164</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Liquidação</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>liquidacoes</td>
+          <td>2026</td>
+          <td class="num">7594</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Liquidação</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>pagamentos</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Despesa por Pagamento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>pagamentos</td>
+          <td>2026</td>
+          <td class="num">7090</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Pagamento</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_extra</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Despesa Extraorçamentária</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_extra</td>
+          <td>2026</td>
+          <td class="num">3148</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa Extraorçamentária</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_unidade</td>
+          <td>2025</td>
+          <td class="num">25</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Unidade Orçamentária</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_unidade</td>
+          <td>2026</td>
+          <td class="num">36</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Unidade Orçamentária</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_funcao</td>
+          <td>2025</td>
+          <td class="num">16</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Função</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_funcao</td>
+          <td>2026</td>
+          <td class="num">16</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Função</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_natureza</td>
+          <td>2025</td>
+          <td class="num">125</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Natureza</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>despesa_natureza</td>
+          <td>2026</td>
+          <td class="num">121</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Natureza</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>fornecedores</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Despesa por Fornecedor</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>fornecedores</td>
+          <td>2026</td>
+          <td class="num">519</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Despesa por Fornecedor</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>restos_pagar</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Restos a Pagar</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>restos_pagar</td>
+          <td>2026</td>
+          <td class="num">53</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Restos a Pagar</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>receitas</td>
+          <td>2025</td>
+          <td class="num">3</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Execução da Receita</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>receitas</td>
+          <td>2026</td>
+          <td class="num">3</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Execução da Receita</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>repasses</td>
+          <td>2025</td>
+          <td class="num">13</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Repasses Recebidos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>repasses</td>
+          <td>2026</td>
+          <td class="num">13</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Repasses Recebidos</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>servidores</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge ERRO">ERRO</span></td>
+          <td><small>HTTP 500 em https://ilai.memory.com.br/api/cronapi/odata/v2/app/query617490?%24format=json&%24inlinecount=allpages&%24skip=0&%24top=500 :: {"error":{"code":null,"message":{"lang":"en","value":"No results for path: $['total']"}}}</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>servidores</td>
+          <td>2026</td>
+          <td class="num">492</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Servidores</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>diarias</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Diárias de Viagem</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>diarias</td>
+          <td>2026</td>
+          <td class="num">1761</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Diárias de Viagem</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>obras</td>
+          <td>2025</td>
+          <td class="num">1</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Obras Públicas</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>obras</td>
+          <td>2026</td>
+          <td class="num">8</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Obras Públicas</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>convenios</td>
+          <td>2025</td>
+          <td class="num">5</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Convênios</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>convenios</td>
+          <td>2026</td>
+          <td class="num">7</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small>Convênios</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>terceirizados</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Terceirizados</small></td>
+        </tr>
+        
+        <tr>
+          <td>Memory iLAI</td>
+          <td>terceirizados</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>Terceirizados</small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>orgao</td>
+          <td>-</td>
+          <td class="num">1</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratacoes</td>
+          <td>2025</td>
+          <td class="num">20</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>arquivos</td>
+          <td>2025</td>
+          <td class="num">34</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>itens</td>
+          <td>2025</td>
+          <td class="num">469</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratos</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>atas</td>
+          <td>2025</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratacoes</td>
+          <td>2026</td>
+          <td class="num">20</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>arquivos</td>
+          <td>2026</td>
+          <td class="num">85</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>itens</td>
+          <td>2026</td>
+          <td class="num">830</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>contratos</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>atas</td>
+          <td>2026</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>PNCP</td>
+          <td>busca_indice</td>
+          <td>-</td>
+          <td class="num">83</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>home_links</td>
+          <td>-</td>
+          <td class="num">90</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>publicacoes</td>
+          <td>-</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small>6 categorias inspecionadas</small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>diario_oficial</td>
+          <td>-</td>
+          <td class="num">0</td>
+          <td><span class="badge VAZIO">VAZIO</span></td>
+          <td><small></small></td>
+        </tr>
+        
+        <tr>
+          <td>Portal Institucional</td>
+          <td>noticias</td>
+          <td>-</td>
+          <td class="num">6</td>
+          <td><span class="badge OK">OK</span></td>
+          <td><small></small></td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+</main>
+<script>
+new Chart(document.getElementById('chartConc'), {
+  type: 'bar',
+  data: {
+    labels: ['Licitações', 'Contratos'],
+    datasets: [
+      { label: 'Conciliados', data: [39, 0], backgroundColor: '#2f855a' },
+      { label: 'Somente Memory (sem PNCP)', data: [139, 368], backgroundColor: '#c53030' }
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('chartForn'), {
+  type: 'bar',
+  data: {
+    labels: ["MINISTERIO DA PREVIDENCIA SOCIAL", "TRANSPORTES MAGALHAES", "FCK ENGENHARIA \u0026 CONSULTORIA", "COOPERUNIAO", "UAITAG", "MODESTO PRODUCOES", "AUTO POSTO DMC", "COFARMINAS COMERCIO DE PRODUTOS ", "TRANSPORTE PALMOPOLIS", "MARKA CHEVROLET"],
+    datasets: [{ label: 'Valor (R$)', data: [2153053.7, 1325155.8, 1285443.6, 1158086.64, 848145.02, 827544.98, 786113.61, 678216.47, 595576.02, 592819.22], backgroundColor: '#2b6cb0' }]
+  },
+  options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+});
+</script>
+</body>
+</html>

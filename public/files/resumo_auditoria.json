@@ -1,0 +1,114 @@
+{
+  "kpis": {
+    "exercicios": [
+      2025,
+      2026
+    ],
+    "memory_licitacoes_qtd": 178,
+    "memory_licitacoes_valor": 136864786.55,
+    "memory_contratos_qtd": 368,
+    "memory_contratos_valor": 74212800.87,
+    "memory_dispensas_qtd": 74,
+    "memory_naf_qtd": 1960,
+    "memory_naf_valor": 75462098.32,
+    "memory_empenhos_qtd": 5433,
+    "memory_empenhos_valor": 37462093.24,
+    "memory_fornecedores_qtd": 519,
+    "memory_servidores_qtd": 492,
+    "pncp_contratacoes_qtd": 40,
+    "pncp_contratacoes_valor_est": 33131671.02,
+    "pncp_contratos_qtd": 0,
+    "pncp_arquivos_qtd": 119,
+    "conciliadas_lic_qtd": 39,
+    "sem_pncp_lic_qtd": 139,
+    "taxa_aderencia_pncp_lic_pct": 21.9,
+    "conciliados_ctr_qtd": 0,
+    "sem_pncp_ctr_qtd": 368,
+    "achados_total": 8,
+    "achados_criticos": 3,
+    "achados_altos": 3,
+    "achados_medios": 2
+  },
+  "achados": [
+    {
+      "codigo": "ACH-01",
+      "severidade": "CRITICO",
+      "base_legal": "Lei 14.133/2021, Arts. 54 e 94",
+      "titulo": "Licitações/processos no Portal Memory sem correspondência no PNCP",
+      "descricao": "Foram identificados processos no Portal da Transparência local (Memory) que não possuem publicação correspondente localizada na API do PNCP para o CNPJ do Município.",
+      "quantidade": 139,
+      "valor_envolvido": 50395816.18,
+      "evidencia": "104/2025; 103/2025; 102/2025; 101/2025; 100/2025; 99/2025; 97/2025; 96/2025; 95/2025; 91/2025"
+    },
+    {
+      "codigo": "ACH-02",
+      "severidade": "ALTO",
+      "base_legal": "Lei 12.527/2011 (LAI), Art. 8º, §1º, IV",
+      "titulo": "Contratações publicadas no PNCP sem espelhamento localizado no Portal Memory",
+      "descricao": "Processos publicados no PNCP sem correspondência direta nos registros do Portal Memory.",
+      "quantidade": 1,
+      "valor_envolvido": 3370500.0,
+      "evidencia": "66234345000118-1-000006/2026"
+    },
+    {
+      "codigo": "ACH-03",
+      "severidade": "CRITICO",
+      "base_legal": "Lei 14.133/2021, Art. 94 (Condição de Eficácia)",
+      "titulo": "Contratos registrados no Portal Memory sem divulgação localizada no PNCP",
+      "descricao": "O Art. 94 da Lei 14.133/2021 estabelece a divulgação no PNCP como condição indispensável para eficácia do contrato e de seus aditivos.",
+      "quantidade": 368,
+      "valor_envolvido": 74212800.8681,
+      "evidencia": "128/2025; 127/2025; 126/2025; 124/2025; 123/2025; 122/2025; 119/2025; 118/2025; 117/2025; 116/2025"
+    },
+    {
+      "codigo": "ACH-05",
+      "severidade": "ALTO",
+      "base_legal": "Lei 12.527/2011, Art. 8º, §1º, IV e §3º",
+      "titulo": "Contratos no Portal Memory com fornecedor ou CPF/CNPJ ausente",
+      "descricao": "Registros de contratos publicados no portal sem identificação de contratado ou CNPJ/CPF.",
+      "quantidade": 368,
+      "valor_envolvido": 74212800.8681,
+      "evidencia": "128/2025; 127/2025; 126/2025; 124/2025; 123/2025; 122/2025; 119/2025; 118/2025; 117/2025; 116/2025"
+    },
+    {
+      "codigo": "ACH-06",
+      "severidade": "CRITICO",
+      "base_legal": "Lei 14.133/2021, Art. 75, I, II e §1º",
+      "titulo": "Dispensas por valor ou acumulados anuais acima do limite legal",
+      "descricao": "Processos ou acumulados por fornecedor em compra direta superam o teto atualizado do Art. 75.",
+      "quantidade": 16,
+      "valor_envolvido": 6144650.85,
+      "evidencia": "101/2025; 86/2025; 81/2025; 72/2025; 67/2025; 30/2025; 23/2025; 12/2025; 5/2025; 72/2026"
+    },
+    {
+      "codigo": "ACH-07",
+      "severidade": "MEDIO",
+      "base_legal": "Lei 14.133/2021, Art. 54, caput",
+      "titulo": "Contratações no PNCP sem inteiro teor de edital/anexos publicados",
+      "descricao": "Art. 54 exige divulgação e manutenção do inteiro teor do ato convocatório e anexos no PNCP.",
+      "quantidade": 1,
+      "valor_envolvido": 543213.28,
+      "evidencia": "66234345000118-1-000013/2025"
+    },
+    {
+      "codigo": "ACH-08",
+      "severidade": "ALTO",
+      "base_legal": "Lei 14.133/2021, Art. 9º, §1º e Art. 14, IV",
+      "titulo": "Fornecedores com homonímia exata no quadro de servidores municipais",
+      "descricao": "Cruzamento nominal entre fornecedores e servidores ativos/contratados identificou coincidência exata de nome completo (CPF parcialmente mascarado pela LAI exige conferência documental).",
+      "quantidade": 127,
+      "valor_envolvido": 393485.93000000005,
+      "evidencia": "MARCELO ALVES TEIXEIRA; JOSE CARLOS COSTA REAL; JURANDIR ALVES DOS SANTOS; LAERCIO GOMES DO AMARAL; LAECIO SOUTO GONCALVES; JULIO CESAR GOMES DA SILVA; ITAMAR VIEIRA DE ARAUJO; PAULO CARLOS FERREIRA"
+    },
+    {
+      "codigo": "ACH-10",
+      "severidade": "MEDIO",
+      "base_legal": "Lei 12.527/2011 (LAI), Art. 8º",
+      "titulo": "Lacunas de publicação em endpoints do iLAI ou seções do Portal Institucional",
+      "descricao": "Endpoints sem registros em 2025/2026 ou seções institucionais (ex.: Licitações/Decretos/Diário) vazias.",
+      "quantidade": 20,
+      "valor_envolvido": 0.0,
+      "evidencia": "fiscais_contrato(2025); pagamentos(2025); despesa_extra(2025); fornecedores(2025); restos_pagar(2025); diarias(2025); terceirizados(2025); terceirizados(2026); contratos(2025); atas(2025); contratos(2026); atas(2026)"
+    }
+  ]
+}
